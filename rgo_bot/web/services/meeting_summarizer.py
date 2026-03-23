@@ -107,9 +107,9 @@ async def summarize_voice_message(
 
 
 async def _transcribe_bytes(audio_data: bytes, filename: str) -> str | None:
-    """Transcribe audio bytes via Whisper API."""
-    if not settings.openai_api_key or settings.openai_api_key.startswith("sk-test"):
-        logger.warning("kos_whisper_skip no_api_key")
+    """Transcribe audio bytes via Groq Whisper API."""
+    if not settings.groq_api_key:
+        logger.warning("kos_whisper_skip no_groq_key")
         return None
 
     try:
@@ -118,9 +118,12 @@ async def _transcribe_bytes(audio_data: bytes, filename: str) -> str | None:
         buf = io.BytesIO(audio_data)
         buf.name = filename
 
-        client = openai.AsyncOpenAI(api_key=settings.openai_api_key)
+        client = openai.AsyncOpenAI(
+            api_key=settings.groq_api_key,
+            base_url="https://api.groq.com/openai/v1",
+        )
         transcript = await client.audio.transcriptions.create(
-            model="whisper-1",
+            model="whisper-large-v3",
             file=buf,
             language="ru",
         )
@@ -129,21 +132,17 @@ async def _transcribe_bytes(audio_data: bytes, filename: str) -> str | None:
         if not text:
             return None
 
-        # Estimate duration from file size (~16kbps for voice)
-        duration_min = max(len(audio_data) / (16 * 1024 * 60 / 8), 0.01)
-        cost = WHISPER_PRICE_PER_MIN * Decimal(str(duration_min))
-
         async with async_session() as session:
             await log_api_usage(
                 session,
-                provider="openai",
+                provider="groq",
                 call_type="kos_transcription",
                 tokens_in=0,
                 tokens_out=0,
-                estimated_cost_usd=cost,
+                estimated_cost_usd=Decimal("0"),
             )
 
-        logger.info("kos_transcribed chars={} cost=${:.4f}", len(text), cost)
+        logger.info("kos_transcribed chars={} via=groq", len(text))
         return text
 
     except Exception:

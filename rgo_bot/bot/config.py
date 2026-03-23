@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     anthropic_proxy_url: str = ""  # HTTP proxy for Anthropic API (e.g. http://127.0.0.1:10809)
     claude_model: str = "claude-sonnet-4-20250514"
     openai_api_key: str = ""
+    groq_api_key: str = ""
     whisper_enabled: bool = True
     daily_ai_budget_usd: float = 5.0
 
