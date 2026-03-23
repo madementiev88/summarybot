@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>РСО</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <button class="hdr-back" id="hdr-back" onclick="goHome()">&#8249; Назад</button>
+    <span class="hdr-title" id="hdr-title">РСО</span>
+    <span class="hdr-dot"></span>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero" id="hero">
+    <div class="hero-title">РСО</div>
+    <div class="hero-line"></div>
+  </div>
+
+  <!-- Tiles -->
+  <div class="tiles-wrap">
+    <div class="tiles-label">Модули</div>
+    <div class="tiles">
+      <button class="tile" id="tile-rgo" onclick="openSection('rgo')">
+        <div class="tile-top"></div>
+        <div class="tile-ico-wrap">&#128202;</div>
+        <span class="tile-lbl">РГО</span>
+        <span class="tile-sub">Мониторинг</span>
+      </button>
+      <button class="tile" id="tile-kos" onclick="openSection('kos')">
+        <div class="tile-top"></div>
+        <div class="tile-ico-wrap" id="kos-ico-wrap">&#127908;</div>
+        <span class="tile-lbl">КОС</span>
+        <span class="tile-sub" id="kos-tile-sub">Совещания</span>
+      </button>
+      <button class="tile" id="tile-preza" onclick="openSection('preza')">
+        <div class="tile-top"></div>
+        <div class="tile-ico-wrap" id="preza-ico-wrap">&#128209;</div>
+        <span class="tile-lbl">Преза</span>
+        <span class="tile-sub" id="preza-tile-sub">Презентации</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Body: Default -->
+  <div class="body-wrap" id="body-default">
+    <div class="welcome-card">
+      <div class="welcome-label">Добро пожаловать</div>
+      <div class="welcome-text">Выберите модуль выше<br>для начала работы</div>
+    </div>
+  </div>
+
+  <!-- Body: RGO -->
+  <div class="body-wrap" id="body-rgo" style="display:none;">
+    <div class="cat-scroll-wrap">
+      <div class="cat-tiles">
+        <button class="cat-tile active" onclick="switchCat(this,'c-sys')">
+          <div class="cat-tile-top"></div>
+          <div class="cat-ico">&#9881;&#65039;</div>
+          <span class="cat-lbl">Система</span>
+        </button>
+        <button class="cat-tile" onclick="switchCat(this,'c-rep')">
+          <div class="cat-tile-top"></div>
+          <div class="cat-ico">&#128200;</div>
+          <span class="cat-lbl">Отчёты</span>
+        </button>
+        <button class="cat-tile" onclick="switchCat(this,'c-gr')">
+          <div class="cat-tile-top"></div>
+          <div class="cat-ico">&#128202;</div>
+          <span class="cat-lbl">Графики</span>
+        </button>
+        <button class="cat-tile" onclick="switchCat(this,'c-por')">
+          <div class="cat-tile-top"></div>
+          <div class="cat-ico">&#9989;</div>
+          <span class="cat-lbl">Задачи</span>
+        </button>
+        <button class="cat-tile" onclick="switchCat(this,'c-an')">
+          <div class="cat-tile-top"></div>
+          <div class="cat-ico">&#129302;</div>
+          <span class="cat-lbl">AI</span>
+        </button>
+        <button class="cat-tile" onclick="switchCat(this,'c-us')">
+          <div class="cat-tile-top"></div>
+          <div class="cat-ico">&#128101;</div>
+          <span class="cat-lbl">Участники</span>
+        </button>
+        <button class="cat-tile" onclick="switchCat(this,'c-st')">
+          <div class="cat-tile-top"></div>
+          <div class="cat-ico">&#128295;</div>
+          <span class="cat-lbl">Настройки</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Command cards per category -->
+    <div class="cmd-card" id="c-sys">
+      <div class="cmd" onclick="runCmd('status')"><span class="cmd-badge">/status</span><span class="cmd-text">Статус бота</span><span class="cmd-arrow">&#8250;</span></div>
+      <div class="cmd" onclick="runCmd('rgo_list')"><span class="cmd-badge">/rgo_list</span><span class="cmd-text">Мониторируемые чаты</span><span class="cmd-arrow">&#8250;</span></div>
+    </div>
+    <div class="cmd-card" id="c-rep" style="display:none;">
+      <div class="cmd" onclick="runCmd('report_now')"><span class="cmd-badge">/report_now</span><span class="cmd-text">Отчёт за сегодня</span><span class="cmd-arrow">&#8250;</span></div>
+      <div class="cmd" onclick="runCmd('report')"><span class="cmd-badge">/report</span><span class="cmd-text">Отчёт за дату</span><span class="cmd-arrow">&#8250;</span></div>
+      <div class="cmd" onclick="runCmd('week')"><span class="cmd-badge">/week</span><span class="cmd-text">Сводка за 7 дней</span><span class="cmd-arrow">&#8250;</span></div>
+    </div>
+    <div class="cmd-card" id="c-gr" style="display:none;">
+      <div class="cmd" onclick="runCmd('load')"><span class="cmd-badge">/load</span><span class="cmd-text">Нагрузка по чатам</span><span class="cmd-arrow">&#8250;</span></div>
+      <div class="cmd" onclick="runCmd('hours')"><span class="cmd-badge">/hours</span><span class="cmd-text">Активность по часам</span><span class="cmd-arrow">&#8250;</span></div>
+      <div class="cmd" onclick="runCmd('activity')"><span class="cmd-badge">/activity</span><span class="cmd-text">Рейтинг участников</span><span class="cmd-arrow">&#8250;</span></div>
+    </div>
+    <div class="cmd-card" id="c-por" style="display:none;">
+      <div class="cmd" onclick="runCmd('tasks')"><span class="cmd-badge">/tasks</span><span class="cmd-text">Открытые поручения</span><span class="cmd-arrow">&#8250;</span></div>
+      <div class="cmd" onclick="runCmd('tasks_week')"><span class="cmd-badge">/tasks_week</span><span class="cmd-text">Статистика за неделю</span><span class="cmd-arrow">&#8250;</span></div>
+    </div>
+    <div class="cmd-card" id="c-an" style="display:none;">
+      <div class="cmd" onclick="runCmd('ask')"><span class="cmd-badge">/ask</span><span class="cmd-text">Вопрос к AI по данным</span><span class="cmd-arrow">&#8250;</span></div>
+      <div class="cmd" onclick="runCmd('search')"><span class="cmd-badge">/search</span><span class="cmd-text">Поиск по сообщениям</span><span class="cmd-arrow">&#8250;</span></div>
+      <div class="cmd" onclick="runCmd('mentions')"><span class="cmd-badge">/mentions</span><span class="cmd-text">Упоминания НУ</span><span class="cmd-arrow">&#8250;</span></div>
+      <div class="cmd" onclick="runCmd('forwards')"><span class="cmd-badge">/forwards</span><span class="cmd-text">Пересылки</span><span class="cmd-arrow">&#8250;</span></div>
+    </div>
+    <div class="cmd-card" id="c-us" style="display:none;">
+      <div class="cmd" onclick="runCmd('participants')"><span class="cmd-badge">/participants</span><span class="cmd-text">Список с ролями</span><span class="cmd-arrow">&#8250;</span></div>
+      <div class="cmd" onclick="runCmd('set_role')"><span class="cmd-badge">/set_role</span><span class="cmd-text">Назначить роль</span><span class="cmd-arrow">&#8250;</span></div>
+    </div>
+    <div class="cmd-card" id="c-st" style="display:none;">
+      <div class="cmd" onclick="runCmd('add_chat')"><span class="cmd-badge">/add_chat</span><span class="cmd-text">Добавить чат</span><span class="cmd-arrow">&#8250;</span></div>
+      <div class="cmd" onclick="runCmd('remove_chat')"><span class="cmd-badge">/remove_chat</span><span class="cmd-text">Убрать чат</span><span class="cmd-arrow">&#8250;</span></div>
+      <div class="cmd" onclick="runCmd('add_keyword')"><span class="cmd-badge">/add_keyword</span><span class="cmd-text">Добавить триггер</span><span class="cmd-arrow">&#8250;</span></div>
+    </div>
+
+    <!-- Input dialog for commands that need text -->
+    <div class="input-dialog" id="input-dialog">
+      <div class="input-row">
+        <input type="text" class="input-field" id="cmd-input" placeholder="Введите...">
+        <button class="input-send" onclick="submitInput()">&#10148;</button>
+      </div>
+    </div>
+
+    <!-- Result area -->
+    <div class="result-card" id="result-area" style="display:none;">
+      <div class="result-html" id="result-html"></div>
+    </div>
+  </div>
+
+  <!-- Body: KOS -->
+  <div class="body-wrap" id="body-kos" style="display:none;">
+    <div class="section-card">
+      <div class="sc-header">
+        <div class="sc-dot" style="background:var(--accent);" id="kos-sc-dot"></div>
+        <span class="sc-title" id="kos-sc-title">Запись встречи</span>
+      </div>
+      <div class="kos-body">
+        <div class="kos-timer" id="kos-timer">00:00</div>
+        <div class="kos-ring" id="kos-ring" onclick="toggleKosRec()">
+          <div class="kos-inner" id="kos-inner">&#127908;</div>
+        </div>
+        <div class="kos-status" id="kos-status">Нажмите для начала записи</div>
+        <div class="kos-hint" id="kos-hint">После остановки AI сформирует<br>краткое содержание встречи</div>
+      </div>
+    </div>
+    <div class="hint-block">
+      <span class="hint-block-text">Также можно отправить голосовое сообщение в бот</span>
+    </div>
+  </div>
+
+  <!-- Body: Preza -->
+  <div class="body-wrap" id="body-preza" style="display:none;">
+    <div class="section-card">
+      <div class="sc-header">
+        <div class="sc-dot" style="background:var(--accent);" id="preza-sc-dot"></div>
+        <span class="sc-title" id="preza-sc-title">Создать презентацию</span>
+      </div>
+      <div class="preza-body">
+        <div class="preza-timer" id="preza-timer">00:00</div>
+        <div class="preza-orb" id="preza-orb" onclick="togglePrezaRec()">&#128209;</div>
+        <div class="preza-hint" id="preza-hint">Наговорите голосом тему,<br>содержание и стиль презентации.<br>Готовый файл придёт в бот.</div>
+        <div class="preza-tag">AI сохранит ваши предпочтения</div>
+      </div>
+    </div>
+    <div class="hint-block">
+      <span class="hint-block-text">Формат: PPTX (PowerPoint)</span>
+    </div>
+  </div>
+
+  <!-- Bug report button -->
+  <div class="report-wrap">
+    <button class="report-btn" onclick="openModal()">сообщить об ошибке</button>
+  </div>
+
+  <!-- Processing overlay -->
+  <div class="processing-overlay" id="processing">
+    <div class="proc-spinner"></div>
+    <div class="proc-step" id="proc-step">Обработка...</div>
+    <div class="proc-sub" id="proc-sub"></div>
+  </div>
+
+  <!-- Feedback modal -->
+  <div class="modal-bg" id="modal">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Сообщить об ошибке</div>
+      <textarea class="modal-ta" placeholder="Опишите проблему или пожелание..."></textarea>
+      <button class="modal-send" onclick="sendFeedback()">Отправить</button>
+      <button class="modal-cancel" onclick="closeModal()">Отмена</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Scripts -->
+  <script src="/static/recorder.js"></script>
+  <script src="/static/app.js"></script>
+
+</body>
+</html>
