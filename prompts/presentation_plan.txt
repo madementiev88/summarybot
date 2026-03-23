@@ -1,4 +1,5 @@
 Пользователь описал, какую презентацию он хочет получить.
+Презентация будет оформлена в корпоративном зелёном стиле Сбера (тёмный титульный/финальный слайд, светлый фон контентных, зелёный акцент).
 
 Описание пользователя:
 {user_request}
@@ -7,6 +8,7 @@
 {preferences}
 
 Создай JSON-план презентации. Учитывай предпочтения если они есть, но новые явные указания пользователя имеют приоритет.
+Не включай титульный и финальный слайды в массив slides — они создаются автоматически.
 
 Ответ — ТОЛЬКО валидный JSON, без markdown-обёрток:
 {{
@@ -14,18 +16,19 @@
   "subtitle": "Подзаголовок (если нужен, иначе пустая строка)",
   "total_slides": число,
   "style": "corporate",
-  "color_scheme": "описание цветовой схемы",
+  "color_scheme": "Sber corporate green",
   "slides": [
     {{
       "slide_number": 1,
       "title": "Заголовок слайда",
-      "layout": "title|content|two_column|bullets",
-      "content_brief": "Краткое описание содержимого"
+      "layout": "content|bullets|metrics|two_column",
+      "content_brief": "Краткое описание содержимого",
+      "has_metrics": true
     }}
   ],
   "updated_preferences": {{
-    "style": "corporate|minimal|creative",
-    "color_scheme": "описание",
+    "style": "corporate",
+    "color_scheme": "Sber corporate green",
     "typical_slide_count": число
   }}
 }}

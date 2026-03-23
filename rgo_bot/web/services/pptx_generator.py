@@ -171,12 +171,15 @@ async def _generate_slide_content(plan: dict) -> list[dict] | None:
 
 
 def _build_pptx(plan: dict, slides: list[dict]) -> bytes:
-    """Build PPTX file from plan and slide content.
+    """Build PPTX in Sber corporate green style.
 
-    Returns bytes of the PPTX file.
+    Colors: bg=F0F2EF, dark=1A2B1E, accent=21A038, text=1A1A1A, gray=5C5C5C
+    Font: Calibri everywhere
+    Structure: first/last slide dark (1A2B1E), content slides light (F0F2EF)
+    Footer: green line + СБЕР left + title+page right
     """
     from pptx import Presentation
-    from pptx.util import Inches, Pt, Emu
+    from pptx.util import Inches, Pt
     from pptx.dml.color import RGBColor
     from pptx.enum.text import PP_ALIGN
 
@@ -184,119 +187,181 @@ def _build_pptx(plan: dict, slides: list[dict]) -> bytes:
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
 
-    # Color scheme
-    style = plan.get("style", "corporate")
-    if style == "minimal":
-        bg_color = RGBColor(0xFF, 0xFF, 0xFF)
-        title_color = RGBColor(0x1A, 0x1A, 0x1A)
-        text_color = RGBColor(0x33, 0x33, 0x33)
-        accent_color = RGBColor(0x1A, 0x8C, 0x36)
-    elif style == "creative":
-        bg_color = RGBColor(0xF0, 0xF5, 0xF0)
-        title_color = RGBColor(0x0D, 0x47, 0xA1)
-        text_color = RGBColor(0x33, 0x33, 0x33)
-        accent_color = RGBColor(0x0D, 0x47, 0xA1)
-    else:  # corporate
-        bg_color = RGBColor(0xFF, 0xFF, 0xFF)
-        title_color = RGBColor(0x1A, 0x1A, 0x1A)
-        text_color = RGBColor(0x44, 0x44, 0x44)
-        accent_color = RGBColor(0x1A, 0x8C, 0x36)
-
-    # Title slide
-    title_text = plan.get("title", "Презентация")
-    subtitle_text = plan.get("subtitle", "")
+    # Corporate color palette
+    CLR_BG = RGBColor(0xF0, 0xF2, 0xEF)       # Light background
+    CLR_DARK = RGBColor(0x1A, 0x2B, 0x1E)      # Title/final slide bg
+    CLR_ACCENT = RGBColor(0x21, 0xA0, 0x38)     # Green accent
+    CLR_TEXT = RGBColor(0x1A, 0x1A, 0x1A)        # Main text
+    CLR_GRAY = RGBColor(0x5C, 0x5C, 0x5C)       # Secondary text
+    CLR_WHITE = RGBColor(0xFF, 0xFF, 0xFF)       # White
+    CLR_FOOTER_GRAY = RGBColor(0x9A, 0x9A, 0x9A) # Footer page number
+    FONT = "Calibri"
 
     slide_layout = prs.slide_layouts[6]  # Blank
-    slide = prs.slides.add_slide(slide_layout)
+    title_text = plan.get("title", "Презентация")
+    subtitle_text = plan.get("subtitle", "")
+    total_slides = len(slides) + 2  # +title +final
 
-    # Background
-    background = slide.background
-    fill = background.fill
-    fill.solid()
-    fill.fore_color.rgb = bg_color
+    def _set_font(paragraph, size, color, bold=False, font_name=FONT):
+        paragraph.font.size = Pt(size)
+        paragraph.font.color.rgb = color
+        paragraph.font.bold = bold
+        paragraph.font.name = font_name
+
+    def _add_footer(slide, slide_num):
+        """Add corporate footer: green line + СБЕР + page number."""
+        # Green line
+        line = slide.shapes.add_shape(
+            1, Inches(0.8), Inches(6.85),
+            Inches(11.733), Inches(0.02),
+        )
+        line.fill.solid()
+        line.fill.fore_color.rgb = CLR_ACCENT
+        line.line.fill.background()
+
+        # "СБЕР" left
+        txBox = slide.shapes.add_textbox(
+            Inches(0.8), Inches(6.95), Inches(2), Inches(0.3)
+        )
+        p = txBox.text_frame.paragraphs[0]
+        p.text = "СБЕР"
+        _set_font(p, 13, CLR_ACCENT, bold=True)
+
+        # Title + page number right
+        txBox = slide.shapes.add_textbox(
+            Inches(9), Inches(6.95), Inches(3.533), Inches(0.3)
+        )
+        p = txBox.text_frame.paragraphs[0]
+        p.text = f"{title_text}  |  {slide_num}/{total_slides}"
+        _set_font(p, 9, CLR_FOOTER_GRAY)
+        p.alignment = PP_ALIGN.RIGHT
+
+    # ── TITLE SLIDE (dark background) ──────────────────
+
+    slide = prs.slides.add_slide(slide_layout)
+    slide.background.fill.solid()
+    slide.background.fill.fore_color.rgb = CLR_DARK
 
     # Title
-    left = Inches(1)
-    top = Inches(2.5)
-    width = Inches(11)
-    height = Inches(1.5)
-    txBox = slide.shapes.add_textbox(left, top, width, height)
+    txBox = slide.shapes.add_textbox(
+        Inches(1), Inches(2.2), Inches(11), Inches(1.5)
+    )
     tf = txBox.text_frame
     tf.word_wrap = True
     p = tf.paragraphs[0]
     p.text = title_text
-    p.font.size = Pt(40)
-    p.font.bold = True
-    p.font.color.rgb = title_color
+    _set_font(p, 40, CLR_WHITE, bold=True)
     p.alignment = PP_ALIGN.CENTER
 
+    # Subtitle
     if subtitle_text:
         p2 = tf.add_paragraph()
         p2.text = subtitle_text
-        p2.font.size = Pt(20)
-        p2.font.color.rgb = text_color
+        _set_font(p2, 20, CLR_ACCENT)
         p2.alignment = PP_ALIGN.CENTER
-        p2.space_before = Pt(12)
+        p2.space_before = Pt(16)
 
-    # Content slides
-    for slide_data in slides:
+    # Accent line under title
+    line = slide.shapes.add_shape(
+        1, Inches(5.5), Inches(3.9), Inches(2.333), Inches(0.04),
+    )
+    line.fill.solid()
+    line.fill.fore_color.rgb = CLR_ACCENT
+    line.line.fill.background()
+
+    _add_footer(slide, 1)
+
+    # ── CONTENT SLIDES (light background) ──────────────
+
+    for idx, slide_data in enumerate(slides):
+        slide_num = idx + 2
         slide = prs.slides.add_slide(slide_layout)
 
-        # Background
-        fill = slide.background.fill
-        fill.solid()
-        fill.fore_color.rgb = bg_color
+        # Light background
+        slide.background.fill.solid()
+        slide.background.fill.fore_color.rgb = CLR_BG
 
-        # Accent line at top
-        from pptx.shapes.autoshape import Shape
-        line_shape = slide.shapes.add_shape(
-            1,  # Rectangle
-            Inches(0), Inches(0),
-            prs.slide_width, Inches(0.05),
+        # Green accent bar at top
+        bar = slide.shapes.add_shape(
+            1, Inches(0), Inches(0),
+            Inches(0.08), Inches(7.5),
         )
-        line_shape.fill.solid()
-        line_shape.fill.fore_color.rgb = accent_color
-        line_shape.line.fill.background()
+        bar.fill.solid()
+        bar.fill.fore_color.rgb = CLR_ACCENT
+        bar.line.fill.background()
 
         # Slide title
         stitle = slide_data.get("title", "")
-        left = Inches(0.8)
-        top = Inches(0.5)
-        width = Inches(11.5)
-        height = Inches(0.8)
-        txBox = slide.shapes.add_textbox(left, top, width, height)
+        txBox = slide.shapes.add_textbox(
+            Inches(0.8), Inches(0.4), Inches(11.5), Inches(0.8)
+        )
         tf = txBox.text_frame
         tf.word_wrap = True
         p = tf.paragraphs[0]
         p.text = stitle
-        p.font.size = Pt(28)
-        p.font.bold = True
-        p.font.color.rgb = title_color
+        _set_font(p, 36, CLR_TEXT, bold=True)
 
-        # Content
+        # Content area
         body_text = slide_data.get("body_text", "")
         bullets = slide_data.get("bullet_points", [])
+        metrics = slide_data.get("metrics", [])  # e.g. [{"value": "+25%", "label": "рост"}]
 
         content_top = Inches(1.5)
-        content_height = Inches(5)
-        txBox = slide.shapes.add_textbox(left, content_top, width, content_height)
+        txBox = slide.shapes.add_textbox(
+            Inches(0.8), content_top, Inches(11.5), Inches(4.8)
+        )
         tf = txBox.text_frame
         tf.word_wrap = True
 
         if body_text:
             p = tf.paragraphs[0]
             p.text = body_text
-            p.font.size = Pt(18)
-            p.font.color.rgb = text_color
+            _set_font(p, 14, CLR_GRAY)
             p.space_after = Pt(12)
 
         for i, bullet in enumerate(bullets):
             p = tf.add_paragraph() if (body_text or i > 0) else tf.paragraphs[0]
-            p.text = f"• {bullet}"
-            p.font.size = Pt(16)
-            p.font.color.rgb = text_color
-            p.space_before = Pt(6)
-            p.space_after = Pt(6)
+            p.text = f"•  {bullet}"
+            _set_font(p, 14, CLR_GRAY)
+            p.space_before = Pt(8)
+            p.space_after = Pt(4)
+
+        # Metrics (big numbers) if provided by Claude
+        if metrics:
+            metric_left = Inches(0.8)
+            for m_idx, metric in enumerate(metrics):
+                mx = metric_left + Inches(m_idx * 3.5)
+                # Value
+                txBox = slide.shapes.add_textbox(
+                    mx, Inches(4.2), Inches(3), Inches(0.8)
+                )
+                p = txBox.text_frame.paragraphs[0]
+                p.text = str(metric.get("value", ""))
+                _set_font(p, 56, CLR_TEXT, bold=True)
+                # Label
+                txBox = slide.shapes.add_textbox(
+                    mx, Inches(5.0), Inches(3), Inches(0.3)
+                )
+                p = txBox.text_frame.paragraphs[0]
+                p.text = str(metric.get("label", ""))
+                _set_font(p, 12, CLR_GRAY)
+
+        # Badge (dynamic indicator) if provided
+        badge = slide_data.get("badge", "")  # e.g. "+15%"
+        if badge:
+            shape = slide.shapes.add_shape(
+                5,  # Rounded rectangle
+                Inches(10.5), Inches(0.45), Inches(1.8), Inches(0.4),
+            )
+            shape.fill.solid()
+            shape.fill.fore_color.rgb = CLR_ACCENT
+            shape.line.fill.background()
+            tf = shape.text_frame
+            tf.word_wrap = False
+            p = tf.paragraphs[0]
+            p.text = badge
+            _set_font(p, 11, CLR_WHITE, bold=True)
+            p.alignment = PP_ALIGN.CENTER
 
         # Speaker notes
         notes = slide_data.get("speaker_notes", "")
@@ -304,6 +369,40 @@ def _build_pptx(plan: dict, slides: list[dict]) -> bytes:
             notes_slide = slide.notes_slide
             notes_tf = notes_slide.notes_text_frame
             notes_tf.text = notes
+
+        _add_footer(slide, slide_num)
+
+    # ── FINAL SLIDE (dark background) ──────────────────
+
+    slide = prs.slides.add_slide(slide_layout)
+    slide.background.fill.solid()
+    slide.background.fill.fore_color.rgb = CLR_DARK
+
+    txBox = slide.shapes.add_textbox(
+        Inches(1), Inches(2.8), Inches(11), Inches(1.2)
+    )
+    tf = txBox.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.text = "Спасибо за внимание"
+    _set_font(p, 40, CLR_WHITE, bold=True)
+    p.alignment = PP_ALIGN.CENTER
+
+    p2 = tf.add_paragraph()
+    p2.text = title_text
+    _set_font(p2, 18, CLR_ACCENT)
+    p2.alignment = PP_ALIGN.CENTER
+    p2.space_before = Pt(16)
+
+    # Accent line
+    line = slide.shapes.add_shape(
+        1, Inches(5.5), Inches(4.2), Inches(2.333), Inches(0.04),
+    )
+    line.fill.solid()
+    line.fill.fore_color.rgb = CLR_ACCENT
+    line.line.fill.background()
+
+    _add_footer(slide, total_slides)
 
     # Save to bytes
     buf = io.BytesIO()
