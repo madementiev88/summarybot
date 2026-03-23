@@ -113,7 +113,15 @@ class MockClaudeClient:
 
 class ClaudeClient:
     def __init__(self) -> None:
-        self._client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+        client_kwargs: dict = {"api_key": settings.anthropic_api_key}
+        if settings.anthropic_proxy_url:
+            import httpx
+
+            client_kwargs["http_client"] = httpx.AsyncClient(
+                proxy=settings.anthropic_proxy_url
+            )
+            logger.info("Claude API using proxy: {}", settings.anthropic_proxy_url)
+        self._client = anthropic.AsyncAnthropic(**client_kwargs)
         self._cb = _CircuitBreaker()
 
     async def complete(
