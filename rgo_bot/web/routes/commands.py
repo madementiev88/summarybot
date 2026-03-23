@@ -136,6 +136,7 @@ async def _cmd_rgo_list() -> dict:
 
 async def _cmd_tasks() -> dict:
     from rgo_bot.db.crud.tasks import get_open_tasks
+    from rgo_bot.bot.services.chat_registry import get_chat_title
 
     async with async_session() as session:
         tasks = await get_open_tasks(session)
@@ -144,11 +145,18 @@ async def _cmd_tasks() -> dict:
         return {"status": "ok", "html": "✅ <b>Открытых поручений нет</b>"}
 
     lines = [f"📋 <b>Открытые поручения ({len(tasks)})</b>\n"]
-    for t in tasks:
+    for i, t in enumerate(tasks[:30], 1):
         status_icon = "🔴" if t.status == "overdue" else "🟡"
         due = f" (до {t.due_date})" if t.due_date else ""
-        conf = f" [{t.confidence:.0%}]"
-        lines.append(f"{status_icon} {t.task_text[:80]}{due}{conf}")
+        chat_title = get_chat_title(t.chat_id) or str(t.chat_id)
+        lines.append(
+            f"{status_icon} <b>{i}.</b> {t.task_text}\n"
+            f"   Чат: {chat_title}{due}\n"
+            f"   Уверенность: {t.confidence:.0%}\n"
+        )
+
+    if len(tasks) > 30:
+        lines.append(f"\n... и ещё {len(tasks) - 30} поручений")
 
     return {"status": "ok", "html": "\n".join(lines)}
 
