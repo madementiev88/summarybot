@@ -33,6 +33,7 @@ logs/
 # Database
 *.db
 *.sqlite3
+*.dump
 
 # Docker
 docker-compose.override.yml
