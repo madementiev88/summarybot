@@ -114,13 +114,19 @@ async def _transcribe_bytes(audio_data: bytes, filename: str) -> str | None:
 
     try:
         import openai
+        import httpx
 
         buf = io.BytesIO(audio_data)
         buf.name = filename
 
+        http_client = None
+        if settings.groq_proxy_url:
+            http_client = httpx.AsyncClient(proxy=settings.groq_proxy_url)
+
         client = openai.AsyncOpenAI(
             api_key=settings.groq_api_key,
             base_url="https://api.groq.com/openai/v1",
+            http_client=http_client,
         )
         transcript = await client.audio.transcriptions.create(
             model="whisper-large-v3",

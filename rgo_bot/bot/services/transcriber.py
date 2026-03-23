@@ -62,10 +62,16 @@ async def transcribe_voice(bot: Bot, file_id: str, duration: int = 0) -> str | N
 
         # Call Groq Whisper API (OpenAI-compatible)
         import openai
+        import httpx
+
+        http_client = None
+        if settings.groq_proxy_url:
+            http_client = httpx.AsyncClient(proxy=settings.groq_proxy_url)
 
         client = openai.AsyncOpenAI(
             api_key=settings.groq_api_key,
             base_url="https://api.groq.com/openai/v1",
+            http_client=http_client,
         )
         transcript = await client.audio.transcriptions.create(
             model="whisper-large-v3",
