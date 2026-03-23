@@ -226,11 +226,13 @@ async def _cmd_mentions(today, tz) -> dict:
     if not mentions:
         return {"status": "ok", "html": "🔇 <b>Упоминаний сегодня нет</b>"}
 
-    lines = [f"📢 <b>Упоминания ({len(mentions)})</b>\n"]
+    lines = [f"📢 <b>Упоминания НУ ({len(mentions)})</b>\n"]
     for m in mentions:
         title = get_chat_title(m.chat_id) or str(m.chat_id)
-        text = (m.text or "")[:60]
-        lines.append(f"• <b>{title}</b>: {text}")
+        ts = m.timestamp.strftime("%H:%M") if m.timestamp else "?"
+        name = m.full_name or "?"
+        text = (m.text or "")[:200]
+        lines.append(f"<b>{ts}</b> [{title}] {name}:\n<i>{text}</i>\n")
 
     return {"status": "ok", "html": "\n".join(lines)}
 
