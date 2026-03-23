@@ -311,6 +311,7 @@ async def _cmd_participants() -> dict:
 
 
 async def _trigger_report(name: str, args: str, bot) -> None:
+    """Trigger report generation as a background task."""
     cmd = f"/{name}"
     if args:
         cmd += f" {args}"
@@ -318,6 +319,106 @@ async def _trigger_report(name: str, args: str, bot) -> None:
         settings.admin_telegram_id,
         f"⏳ Команда <code>{cmd}</code> запущена через Mini App...",
     )
+
+    async def _gen() -> None:
+        try:
+            tz = ZoneInfo(settings.timezone)
+
+            if name == "report_now":
+                today = datetime.datetime.now(tz).date()
+                from rgo_bot.db.crud.reports import get_report_by_date
+                from rgo_bot.bot.services.reporter import send_report_to_admin
+                from rgo_bot.bot.services.summarizer import generate_daily_report
+
+                result = await generate_daily_report(today, force=True)
+                if result:
+                    async with async_session() as session:
+                        report = await get_report_by_date(session, today, "daily")
+                    report_id = report.id if report else None
+                    await send_report_to_admin(bot, result.report_text, report_id)
+
+                    # Charts
+                    from rgo_bot.bot.services.chart_generator import (
+                        generate_load_chart, generate_heatmap, generate_activity_chart,
+                    )
+                    from rgo_bot.bot.services.chat_registry import get_all_chat_titles
+                    from rgo_bot.bot.services.reporter import send_chart_to_admin
+
+                    chat_titles = get_all_chat_titles()
+                    async with async_session() as session:
+                        chart = await generate_load_chart(session, today, chat_titles)
+                        if chart:
+                            await send_chart_to_admin(bot, chart, "📊 Нагрузка по чатам")
+                        chart = await generate_heatmap(session, today, chat_titles)
+                        if chart:
+                            await send_chart_to_admin(bot, chart, "🕐 Активность по часам")
+                        chart = await generate_activity_chart(session, today, chat_titles)
+                        if chart:
+                            await send_chart_to_admin(bot, chart, "👥 Рейтинг участников")
+                else:
+                    await bot.send_message(
+                        settings.admin_telegram_id,
+                        "📭 Нет данных за сегодня для генерации отчёта.",
+                    )
+
+            elif name == "report" and args.strip():
+                # Report for specific date
+                try:
+                    report_date = datetime.date.fromisoformat(args.strip())
+                except ValueError:
+                    await bot.send_message(
+                        settings.admin_telegram_id,
+                        "❌ Формат даты: YYYY-MM-DD",
+                    )
+                    return
+                from rgo_bot.bot.services.summarizer import generate_daily_report
+                from rgo_bot.bot.services.reporter import send_report_to_admin
+
+                result = await generate_daily_report(report_date, force=True)
+                if result:
+                    await send_report_to_admin(bot, result.report_text, None)
+                else:
+                    await bot.send_message(
+                        settings.admin_telegram_id,
+                        f"📭 Нет данных за {report_date} для генерации отчёта.",
+                    )
+
+            elif name == "week":
+                from rgo_bot.bot.services.summarizer import generate_daily_report
+                from rgo_bot.bot.services.reporter import send_report_to_admin
+
+                today = datetime.datetime.now(tz).date()
+                # Generate brief weekly summary
+                week_lines = [f"📊 <b>Сводка за 7 дней</b>\n"]
+                for i in range(6, -1, -1):
+                    d = today - datetime.timedelta(days=i)
+                    day_start = datetime.datetime.combine(d, datetime.time.min, tzinfo=tz)
+                    day_end = datetime.datetime.combine(d + datetime.timedelta(days=1), datetime.time.min, tzinfo=tz)
+                    async with async_session() as session:
+                        result = await session.execute(
+                            select(func.count(MessageModel.id)).where(
+                                MessageModel.timestamp >= day_start,
+                                MessageModel.timestamp < day_end,
+                            )
+                        )
+                        count = result.scalar_one()
+                    day_name = d.strftime("%a %d.%m")
+                    bar = "█" * min(count // 5, 20) if count > 0 else "—"
+                    week_lines.append(f"{day_name}: <b>{count}</b> {bar}")
+
+                await bot.send_message(
+                    settings.admin_telegram_id,
+                    "\n".join(week_lines),
+                )
+
+        except Exception:
+            logger.exception("webapp_report_error name={}", name)
+            await bot.send_message(
+                settings.admin_telegram_id,
+                f"❌ Ошибка генерации отчёта /{name}",
+            )
+
+    asyncio.create_task(_gen())
 
 
 async def _trigger_chart(name: str, bot) -> None:
