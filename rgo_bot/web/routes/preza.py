@@ -33,7 +33,7 @@ async def handle_preza_generate(request: web.Request) -> web.Response:
         if part is None:
             break
         if part.name == "audio":
-            audio_data = await part.read(chunk_size=25 * 1024 * 1024)
+            audio_data = await part.read()
             filename = part.filename or filename
 
     if not audio_data:
