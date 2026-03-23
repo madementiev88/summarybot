@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     groq_proxy_url: str = ""  # HTTP proxy for Groq API (e.g. http://127.0.0.1:10809)
     whisper_enabled: bool = True
     daily_ai_budget_usd: float = 5.0
+    initial_balance_usd: float = 25.0  # Starting Anthropic balance, set once
 
     # ── Database ───────────────────────────────────
     database_url: str = "postgresql+asyncpg://rgo_bot:rgo_bot_password@localhost:5432/rgo_bot"

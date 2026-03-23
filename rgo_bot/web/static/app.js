@@ -489,14 +489,18 @@ async function loadBalance() {
     if (dailyRemaining < 1) valueClass = 'danger';
     else if (dailyRemaining < 2) valueClass = 'warn';
 
+    var balanceClass = '';
+    if (data.balance < 5) balanceClass = 'danger';
+    else if (data.balance < 10) balanceClass = 'warn';
+
     el.innerHTML =
+      '<div class="balance-item">' +
+        '<span class="balance-value ' + balanceClass + '">$' + data.balance.toFixed(2) + '</span>' +
+        '<span class="balance-label">Баланс</span>' +
+      '</div>' +
       '<div class="balance-item">' +
         '<span class="balance-value ' + valueClass + '">$' + dailyRemaining.toFixed(2) + '</span>' +
         '<span class="balance-label">Бюджет дня</span>' +
-      '</div>' +
-      '<div class="balance-item">' +
-        '<span class="balance-value">$' + data.daily_spent.toFixed(2) + '</span>' +
-        '<span class="balance-label">Потрачено</span>' +
       '</div>' +
       '<div class="balance-item">' +
         '<span class="balance-value">$' + data.total_spent.toFixed(2) + '</span>' +

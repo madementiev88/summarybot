@@ -113,9 +113,11 @@ def create_web_app(bot: Bot) -> web.Application:
             )
             total_spent = Decimal(str(result.scalar_one()))
 
+        balance = Decimal(str(settings.initial_balance_usd)) - total_spent
+
         return web.json_response({
+            "balance": float(balance),
             "daily_budget": settings.daily_ai_budget_usd,
-            "daily_spent": float(daily_cost),
             "daily_remaining": float(Decimal(str(settings.daily_ai_budget_usd)) - daily_cost),
             "total_spent": float(total_spent),
         })
