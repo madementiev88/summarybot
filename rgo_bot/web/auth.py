@@ -99,7 +99,7 @@ async def auth_middleware(request: web.Request, handler):
 
     # Admin-only check
     user_id = user.get("id")
-    if user_id != settings.admin_telegram_id:
+    if not settings.is_admin(user_id):
         logger.warning("webapp_auth forbidden user_id={}", user_id)
         return web.json_response(
             {"error": "Forbidden"}, status=403

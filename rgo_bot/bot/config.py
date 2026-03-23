@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     # ── Telegram ───────────────────────────────────
     bot_token: str
     admin_telegram_id: int
+    admin_ids: str | int | list[int] = ""  # Additional admin IDs (comma-separated)
     report_recipients: str | int | list[int] = ""
     admin_name_aliases: str | list[str] = ""
     monitored_chat_ids: str | int | list[int] = ""
@@ -94,7 +95,22 @@ class Settings(BaseSettings):
             object.__setattr__(
                 self, "work_days", _split_str(self.work_days, int)
             )
+        # Parse admin_ids: merge admin_telegram_id + admin_ids into a set
+        if isinstance(self.admin_ids, int):
+            object.__setattr__(
+                self, "admin_ids", [self.admin_ids]
+            )
+        elif isinstance(self.admin_ids, str):
+            object.__setattr__(
+                self, "admin_ids", _split_str(self.admin_ids, int)
+            )
         return self
+
+    def is_admin(self, user_id: int) -> bool:
+        """Check if user_id is an admin (primary or additional)."""
+        if user_id == self.admin_telegram_id:
+            return True
+        return user_id in (self.admin_ids or [])
 
 
 settings = Settings()  # type: ignore[call-arg]

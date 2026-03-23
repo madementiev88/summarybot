@@ -119,21 +119,25 @@ async def main() -> None:
         BotCommand(command="activity", description="Рейтинг участников"),
     ])
 
-    # Set Mini App menu button for admin (if webapp_url configured)
+    # Set Mini App menu button for all admins (if webapp_url configured)
     if settings.webapp_url:
         from aiogram.types import MenuButtonWebApp, WebAppInfo
 
-        try:
-            await bot.set_chat_menu_button(
-                chat_id=settings.admin_telegram_id,
-                menu_button=MenuButtonWebApp(
-                    text="РСО",
-                    web_app=WebAppInfo(url=settings.webapp_url),
-                ),
-            )
-            logger.info("Mini App menu button set for admin")
-        except Exception:
-            logger.warning("Could not set Mini App menu button")
+        all_admin_ids = {settings.admin_telegram_id}
+        all_admin_ids.update(settings.admin_ids or [])
+
+        for admin_id in all_admin_ids:
+            try:
+                await bot.set_chat_menu_button(
+                    chat_id=admin_id,
+                    menu_button=MenuButtonWebApp(
+                        text="РСО",
+                        web_app=WebAppInfo(url=settings.webapp_url),
+                    ),
+                )
+                logger.info("Mini App menu button set for admin_id={}", admin_id)
+            except Exception:
+                logger.warning("Could not set Mini App menu button for admin_id={}", admin_id)
 
     # Start web server for Mini App
     from rgo_bot.web.app import create_web_app

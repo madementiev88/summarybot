@@ -24,7 +24,7 @@ class AdminOnlyMiddleware(BaseMiddleware):
         if not isinstance(event, Message):
             return await handler(event, data)
 
-        if event.from_user and event.from_user.id == settings.admin_telegram_id:
+        if event.from_user and settings.is_admin(event.from_user.id):
             return await handler(event, data)
 
         # Silently ignore non-admin private messages
