@@ -90,6 +90,38 @@ def create_web_app(bot: Bot) -> web.Application:
 
     app.router.add_get("/", index_handler)
 
+    # Balance endpoint
+    async def balance_handler(request: web.Request) -> web.Response:
+        import datetime
+        from decimal import Decimal
+        from zoneinfo import ZoneInfo
+        from rgo_bot.bot.config import settings
+        from rgo_bot.db.base import async_session
+        from rgo_bot.db.crud.api_usage import get_daily_cost
+        from sqlalchemy import func, select
+        from rgo_bot.db.models import ApiUsage
+
+        tz = ZoneInfo(settings.timezone)
+        today = datetime.datetime.now(tz).date()
+
+        async with async_session() as session:
+            daily_cost = await get_daily_cost(session, today, tz)
+
+            # Total spent all time
+            result = await session.execute(
+                select(func.coalesce(func.sum(ApiUsage.estimated_cost_usd), 0))
+            )
+            total_spent = Decimal(str(result.scalar_one()))
+
+        return web.json_response({
+            "daily_budget": settings.daily_ai_budget_usd,
+            "daily_spent": float(daily_cost),
+            "daily_remaining": float(Decimal(str(settings.daily_ai_budget_usd)) - daily_cost),
+            "total_spent": float(total_spent),
+        })
+
+    app.router.add_get("/api/balance", balance_handler)
+
     # Task status endpoint (generic)
     async def task_status_handler(request: web.Request) -> web.Response:
         task_id = request.match_info["task_id"]

@@ -475,6 +475,42 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// ── Balance display ───────────────────────────────────
+
+async function loadBalance() {
+  try {
+    const data = await apiCall('/api/balance');
+    const el = document.getElementById('hero-balance');
+    if (!el) return;
+
+    const dailyRemaining = data.daily_remaining;
+
+    let valueClass = '';
+    if (dailyRemaining < 1) valueClass = 'danger';
+    else if (dailyRemaining < 2) valueClass = 'warn';
+
+    el.innerHTML =
+      '<div class="balance-item">' +
+        '<span class="balance-value ' + valueClass + '">$' + dailyRemaining.toFixed(2) + '</span>' +
+        '<span class="balance-label">Бюджет дня</span>' +
+      '</div>' +
+      '<div class="balance-item">' +
+        '<span class="balance-value">$' + data.daily_spent.toFixed(2) + '</span>' +
+        '<span class="balance-label">Потрачено</span>' +
+      '</div>' +
+      '<div class="balance-item">' +
+        '<span class="balance-value">$' + data.total_spent.toFixed(2) + '</span>' +
+        '<span class="balance-label">Всего</span>' +
+      '</div>';
+  } catch (err) {
+    // Silently ignore
+  }
+}
+
+// Load balance on start and refresh every 60 seconds
+loadBalance();
+setInterval(loadBalance, 60000);
+
 // ── Keyboard support for input ────────────────────────
 
 document.addEventListener('keydown', (e) => {

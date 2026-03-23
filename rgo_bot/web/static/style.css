@@ -97,6 +97,39 @@ body {
   margin: 8px auto 0;
 }
 
+.hero-balance {
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.balance-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.balance-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-value.warn { color: var(--yellow); }
+.balance-value.danger { color: var(--red); }
+
+.balance-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* ── Tiles ───────────────────────────────── */
 
 .tiles-wrap { padding: 14px 14px 0; }
