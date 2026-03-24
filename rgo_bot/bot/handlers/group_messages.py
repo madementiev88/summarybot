@@ -65,11 +65,13 @@ async def handle_group_message(message: Message) -> None:
         from rgo_bot.bot.services.alerter import check_realtime_alerts
         from rgo_bot.bot.services.collector import _check_admin_mention
 
+        from rgo_bot.bot.services.chat_registry import get_chat_title
+
         text = message.text or message.caption
         mentions_admin, _ = _check_admin_mention(text)
         user = message.from_user
         full_name = f"{user.first_name or ''} {user.last_name or ''}".strip() if user else "?"
-        chat_title = message.chat.title or str(message.chat.id)
+        chat_title = get_chat_title(message.chat.id)
 
         await check_realtime_alerts(
             bot=message.bot,

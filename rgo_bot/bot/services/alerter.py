@@ -219,11 +219,8 @@ async def check_silence_alerts(bot: Bot) -> None:
         silence_duration = now - last.astimezone(tz)
         if silence_duration > threshold:
             hours = int(silence_duration.total_seconds() / 3600)
-            try:
-                chat = await bot.get_chat(chat_id)
-                chat_title = chat.title or str(chat_id)
-            except Exception:
-                chat_title = str(chat_id)
+            from rgo_bot.bot.services.chat_registry import get_chat_title
+            chat_title = get_chat_title(chat_id)
 
             await _save_and_send_alert(
                 bot,

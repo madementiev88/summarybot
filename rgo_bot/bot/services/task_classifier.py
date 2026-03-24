@@ -7,7 +7,7 @@ from loguru import logger
 from zoneinfo import ZoneInfo
 
 from rgo_bot.bot.config import settings
-from rgo_bot.bot.services.chat_registry import get_active_chat_ids
+from rgo_bot.bot.services.chat_registry import get_active_chat_ids, get_chat_title
 from rgo_bot.bot.services.claude_client import (
     BudgetExceededError,
     CircuitOpenError,
@@ -81,7 +81,7 @@ async def classify_tasks_l1() -> int:
             # Call Claude for task detection
             prompt_template = load_prompt("task_detect")
             user_prompt = prompt_template.format(
-                chat_title=str(chat_id),
+                chat_title=get_chat_title(chat_id),
                 messages_text=_format_messages_for_prompt(messages),
             )
 
@@ -208,7 +208,7 @@ async def validate_tasks_l2() -> int:
 
             prompt_template = load_prompt("task_validate")
             user_prompt = prompt_template.format(
-                chat_title=str(chat_id),
+                chat_title=get_chat_title(chat_id),
                 tasks_json=tasks_json,
                 messages_text=_format_messages_for_prompt(messages) if messages else "(нет сообщений за сегодня)",
                 today=today.isoformat(),
