@@ -9,6 +9,16 @@
 </head>
 <body>
 
+  <!-- Access denied screen (shown by default, hidden after auth) -->
+  <div id="access-denied" style="display:none; text-align:center; padding:60px 20px;">
+    <div style="font-size:30px;font-weight:700;letter-spacing:6px;margin-bottom:8px;">РСО</div>
+    <div style="width:40px;height:2px;background:var(--accent);border-radius:2px;margin:8px auto 30px;"></div>
+    <div style="font-size:14px;color:var(--text-secondary);line-height:1.8;">Доступ ограничен<br>Приложение доступно только<br>для администраторов</div>
+  </div>
+
+  <!-- Main app content (hidden until auth passes) -->
+  <div id="app-content" style="display:none;">
+
   <!-- Header -->
   <div class="header">
     <button class="hdr-back" id="hdr-back" onclick="goHome()">&#8249; Назад</button>
@@ -212,6 +222,8 @@
 
   <!-- Toast -->
   <div class="toast" id="toast"></div>
+
+  </div><!-- /app-content -->
 
   <!-- Scripts -->
   <script src="/static/recorder.js"></script>

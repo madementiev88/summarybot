@@ -22,21 +22,17 @@ async function checkAccess() {
       headers: { 'Authorization': `tg-init-data ${initData}` }
     });
     if (resp.status === 401 || resp.status === 403) {
-      document.querySelector('.hero').innerHTML = '<div class="hero-title">РСО</div><div class="hero-line"></div>';
-      document.querySelector('.tiles-wrap').style.display = 'none';
-      document.querySelector('.report-wrap').style.display = 'none';
-      const balanceBar = document.getElementById('balance-bar');
-      if (balanceBar) balanceBar.style.display = 'none';
-      const bodyDefault = document.getElementById('body-default');
-      if (bodyDefault) {
-        bodyDefault.style.display = 'block';
-        bodyDefault.innerHTML = '<div class="welcome-card"><div class="welcome-label">Доступ ограничен</div><div class="welcome-text">Приложение доступно только<br>для администраторов</div></div>';
-      }
+      document.getElementById('access-denied').style.display = 'block';
+      document.getElementById('app-content').style.display = 'none';
       return false;
     }
+    document.getElementById('access-denied').style.display = 'none';
+    document.getElementById('app-content').style.display = 'block';
     return true;
   } catch (e) {
-    return true; // allow if network error (offline dev)
+    // Allow if network error (offline dev)
+    document.getElementById('app-content').style.display = 'block';
+    return true;
   }
 }
 
