@@ -694,134 +694,302 @@ body {
 }
 .hint-block-text { font-size: 10px; color: var(--text-very-muted); }
 
-/* ── RGO Dashboard styles ──────────────────────────── */
+/* ── RGO Dashboard — friendly AI helper ────────────── */
 
-.rgo-hero {
-  padding: 16px 18px 12px;
+#rgo-dashboard {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+}
+.rd-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 14px 70px;
+}
+
+/* Greeting */
+.rd-greeting { padding: 18px 4px 8px; }
+.rd-greeting-name { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+.rd-greeting-date { font-size: 12px; color: var(--text-very-muted); margin-top: 2px; }
+
+/* Bottom navbar */
+.rd-navbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+  display: flex;
+  padding: 6px 0 10px;
+  z-index: 20;
+}
+.rd-nav-item {
+  flex: 1;
   text-align: center;
+  cursor: pointer;
+  opacity: 0.4;
+  transition: opacity .15s;
 }
-.rgo-greeting {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-.rgo-chat-name {
-  font-size: 12px;
-  color: var(--text-secondary);
-  margin-top: 2px;
-}
-.rgo-rank {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 4px 14px;
-  border-radius: 20px;
-  background: var(--accent-light);
-  border: 1px solid var(--accent);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--accent);
-}
+.rd-nav-item.active { opacity: 1; }
+.rd-nav-ico { font-size: 18px; }
+.rd-nav-lbl { font-size: 9px; color: var(--text-secondary); margin-top: 1px; }
+.rd-nav-item.active .rd-nav-lbl { color: var(--accent); font-weight: 600; }
 
-.rgo-tile.active {
-  background: var(--accent-light);
-  border-color: var(--accent);
-}
-.rgo-tile.active .tile-lbl { color: var(--accent); }
-
-.rgo-loading, .rgo-empty, .rgo-error {
+/* Loading / empty / error */
+.rd-loading, .rd-empty, .rd-error {
   text-align: center;
-  padding: 20px;
+  padding: 30px 10px;
   font-size: 13px;
   color: var(--text-secondary);
 }
-.rgo-error { color: var(--red); }
+.rd-error { color: var(--red); }
 
-.rgo-card {
+/* Focus block — green */
+.rd-focus {
+  background: #eaf7ee;
+  border-radius: 16px;
+  padding: 14px 16px;
+  border-left: 4px solid var(--accent);
+  margin-bottom: 12px;
+}
+.rd-focus-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.rd-focus-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.rd-focus-item:last-child { margin-bottom: 0; }
+.rd-focus-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.rd-focus-text { font-size: 13px; color: #2a4a2a; }
+
+/* AI tips block — purple */
+.rd-tips {
+  background: #f3eef8;
+  border-radius: 16px;
+  padding: 14px 16px;
+  border-left: 4px solid #7c4dff;
+  margin-bottom: 12px;
+}
+.rd-tips-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #7c4dff;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.rd-tips-sub {
+  font-size: 10px;
+  color: #b8a0d8;
+  font-style: italic;
+  margin-bottom: 10px;
+}
+.rd-tips-item {
+  font-size: 13px;
+  color: #4a3a5a;
+  line-height: 1.6;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e8e0f0;
+}
+.rd-tips-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+/* Team dots (home page compact) */
+.rd-team-dots-block {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.rd-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-very-muted);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.rd-team-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rd-team-person {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--bg);
+  padding: 4px 10px 4px 6px;
+  border-radius: 20px;
+}
+.rd-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.rd-dot-green { background: #4caf50; }
+.rd-dot-yellow { background: #ffc107; }
+.rd-dot-red { background: #e53935; }
+
+/* Analytics mini (home page) */
+.rd-analytics-mini {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.rd-an-row { display: flex; gap: 12px; }
+.rd-an-card { flex: 1; text-align: center; }
+.rd-an-num { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+.rd-an-sub { font-size: 10px; color: var(--text-very-muted); margin-top: 2px; }
+.rd-an-tag { font-size: 10px; color: var(--accent); margin-top: 2px; }
+.rd-an-tag-red { font-size: 10px; color: var(--red); margin-top: 2px; }
+
+/* ── Tasks tab ── */
+.rd-counters { display: flex; gap: 8px; margin-bottom: 12px; }
+.rd-counter {
+  flex: 1;
+  text-align: center;
+  padding: 10px 4px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+}
+.rd-counter-num { font-size: 20px; font-weight: 700; }
+.rd-counter-num-fire { color: var(--red); }
+.rd-counter-num-open { color: var(--text-primary); }
+.rd-counter-num-done { color: var(--accent); }
+.rd-counter-label { font-size: 9px; color: var(--text-very-muted); margin-top: 2px; }
+
+.rd-nu-block {
+  background: #fff3e0;
+  border-radius: 16px;
+  padding: 14px 16px;
+  border-left: 4px solid #ff9800;
+  margin-bottom: 12px;
+}
+.rd-nu-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #ff9800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rd-nu-item { font-size: 13px; color: #5a4020; line-height: 1.6; margin-bottom: 6px; }
+
+.rd-task-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 12px 14px;
-  margin-bottom: 10px;
-}
-.rgo-card-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-primary);
   margin-bottom: 8px;
 }
-
-.rgo-item { font-size: 12px; color: var(--text-secondary); line-height: 1.7; }
-.rgo-item-red { font-size: 12px; color: var(--red); line-height: 1.7; font-weight: 500; }
-.rgo-item-yellow { font-size: 12px; color: #e6a700; line-height: 1.7; }
-
-.rgo-rec-text {
-  font-size: 12px;
+.rd-task-fire { border-left: 3px solid var(--red); }
+.rd-task-title { font-size: 13px; color: var(--text-primary); line-height: 1.4; }
+.rd-task-meta { font-size: 10px; color: var(--text-very-muted); margin-top: 4px; }
+.rd-task-meta-fire { font-size: 10px; color: var(--red); margin-top: 4px; }
+.rd-task-btn {
+  margin-top: 8px;
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  font-size: 11px;
   color: var(--text-secondary);
-  line-height: 1.7;
-  white-space: pre-wrap;
+  cursor: pointer;
 }
-.rgo-time {
-  font-size: 10px;
-  color: var(--text-very-muted);
-  margin-top: 6px;
-}
+.rd-task-btn:active { background: var(--accent-light); color: var(--accent); }
 
-.rgo-stats-bar {
-  display: flex;
+/* ── Team tab ── */
+.rd-member-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 12px;
 }
-.rgo-stat {
-  flex: 1;
+.rd-member-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px 6px;
-  text-align: center;
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.rgo-stat-num {
-  display: block;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-.rgo-stat-small { font-size: 13px !important; }
-.rgo-stat-label {
-  display: block;
-  font-size: 9px;
-  color: var(--text-secondary);
-  margin-top: 2px;
-}
-.rgo-stat-red .rgo-stat-num { color: var(--red); }
-.rgo-stat-green .rgo-stat-num { color: var(--accent); }
+.rd-member-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.rd-member-name { font-size: 12px; color: var(--text-primary); font-weight: 500; }
+.rd-member-sub { font-size: 10px; color: var(--text-very-muted); }
 
-.rgo-task, .rgo-task-overdue {
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
+.rd-attention {
+  background: #fff8e1;
+  border-radius: 16px;
+  padding: 14px 16px;
+  border-left: 4px solid #ffc107;
+  margin-bottom: 12px;
 }
-.rgo-task:last-child, .rgo-task-overdue:last-child { border-bottom: none; }
-.rgo-task-overdue { border-left: 3px solid var(--red); padding-left: 10px; }
-.rgo-task-text { font-size: 12px; color: var(--text-primary); line-height: 1.5; }
-.rgo-task-meta { font-size: 10px; color: var(--text-very-muted); margin-top: 3px; }
-.rgo-task-close {
-  margin-top: 6px;
-  padding: 4px 12px;
-  border: 1px solid var(--accent);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--accent);
-  font-size: 11px;
-  cursor: pointer;
-}
-.rgo-task-close:active { background: var(--accent-light); }
-
-.rgo-badge-red {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: var(--red);
-  color: #fff;
-  font-size: 9px;
+.rd-attention-label {
+  font-size: 10px;
   font-weight: 600;
-  vertical-align: middle;
+  color: #f9a825;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
 }
+.rd-attention-item { font-size: 13px; color: #5a4a20; line-height: 1.6; margin-bottom: 6px; }
+
+.rd-top-block {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.rd-top-item { font-size: 13px; color: var(--text-secondary); line-height: 2; }
+.rd-top-item b { color: var(--text-primary); }
+
+/* ── Analytics tab ── */
+.rd-an-section {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.rd-an-metrics { display: flex; gap: 10px; }
+.rd-an-metric { flex: 1; text-align: center; }
+.rd-an-big { font-size: 28px; font-weight: 700; color: var(--text-primary); }
+.rd-an-small { font-size: 10px; color: var(--text-very-muted); margin-top: 2px; }
+.rd-an-trend { font-size: 11px; color: var(--accent); margin-top: 3px; }
+.rd-an-trend-red { font-size: 11px; color: var(--red); margin-top: 3px; }
+.rd-an-rank {
+  text-align: center;
+  padding: 12px;
+  background: #eaf7ee;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+.rd-an-rank-text { font-size: 14px; font-weight: 600; color: var(--accent); }

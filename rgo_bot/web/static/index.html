@@ -18,49 +18,52 @@
 
   <!-- RGO Dashboard (shown for RGO users) -->
   <div id="rgo-dashboard" style="display:none;">
-    <div class="header">
-      <span class="hdr-title">РСО</span>
-      <span class="hdr-dot"></span>
-    </div>
-    <div class="rgo-hero">
-      <div class="rgo-greeting" id="rgo-dash-name">РГО</div>
-      <div class="rgo-chat-name" id="rgo-dash-chat"></div>
-      <div class="rgo-rank" id="rgo-rank-badge" style="display:none;"></div>
-    </div>
-    <div class="tiles-wrap">
-      <div class="tiles-label">Дашборд</div>
-      <div class="tiles" style="grid-template-columns: repeat(3, 1fr);">
-        <button class="tile rgo-tile active" id="rgo-tile-tips" onclick="openRgoSection('tips')">
-          <div class="tile-top"></div>
-          <div class="tile-ico-wrap">&#128161;</div>
-          <span class="tile-lbl">Советы</span>
-          <span class="tile-sub">Фокус дня</span>
-        </button>
-        <button class="tile rgo-tile" id="rgo-tile-tasks" onclick="openRgoSection('tasks')">
-          <div class="tile-top"></div>
-          <div class="tile-ico-wrap">&#9989;</div>
-          <span class="tile-lbl">Задачи</span>
-          <span class="tile-sub">Поручения</span>
-        </button>
-        <button class="tile rgo-tile" id="rgo-tile-team" onclick="openRgoSection('team')">
-          <div class="tile-top"></div>
-          <div class="tile-ico-wrap">&#128101;</div>
-          <span class="tile-lbl">Команда</span>
-          <span class="tile-sub">Метрики</span>
-        </button>
+    <div class="rd-content">
+      <!-- Greeting -->
+      <div class="rd-greeting">
+        <div class="rd-greeting-name" id="rgo-dash-name">Привет 👋</div>
+        <div class="rd-greeting-date" id="rgo-dash-date"></div>
+      </div>
+
+      <!-- Tab: Главная -->
+      <div id="rgo-tab-home">
+        <div id="rgo-tips-content"><div class="rd-loading">Загрузка...</div></div>
+      </div>
+
+      <!-- Tab: Таски -->
+      <div id="rgo-tab-tasks" style="display:none;">
+        <div id="rgo-tasks-content"></div>
+      </div>
+
+      <!-- Tab: Команда -->
+      <div id="rgo-tab-team" style="display:none;">
+        <div id="rgo-team-content"></div>
+      </div>
+
+      <!-- Tab: Аналитика -->
+      <div id="rgo-tab-analytics" style="display:none;">
+        <div id="rgo-analytics-content"></div>
       </div>
     </div>
-    <div class="body-wrap" id="rgo-body-tips">
-      <div id="rgo-tips-content"><div class="rgo-loading">Загрузка...</div></div>
-    </div>
-    <div class="body-wrap" id="rgo-body-tasks" style="display:none;">
-      <div id="rgo-tasks-content"></div>
-    </div>
-    <div class="body-wrap" id="rgo-body-team" style="display:none;">
-      <div id="rgo-team-content"></div>
-    </div>
-    <div class="report-wrap">
-      <button class="report-btn" onclick="openModal()">сообщить об ошибке</button>
+
+    <!-- Bottom navbar -->
+    <div class="rd-navbar">
+      <div class="rd-nav-item active" id="rd-nav-home" onclick="switchRgoTab('home')">
+        <div class="rd-nav-ico">🏠</div>
+        <div class="rd-nav-lbl">главная</div>
+      </div>
+      <div class="rd-nav-item" id="rd-nav-tasks" onclick="switchRgoTab('tasks')">
+        <div class="rd-nav-ico">📋</div>
+        <div class="rd-nav-lbl">таски</div>
+      </div>
+      <div class="rd-nav-item" id="rd-nav-team" onclick="switchRgoTab('team')">
+        <div class="rd-nav-ico">👥</div>
+        <div class="rd-nav-lbl">команда</div>
+      </div>
+      <div class="rd-nav-item" id="rd-nav-analytics" onclick="switchRgoTab('analytics')">
+        <div class="rd-nav-ico">📊</div>
+        <div class="rd-nav-lbl">аналитика</div>
+      </div>
     </div>
   </div>
 

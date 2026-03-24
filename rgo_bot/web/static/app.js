@@ -32,25 +32,25 @@ async function checkAccess() {
     } else if (resp.role === 'rgo') {
       userRole = 'rgo';
       rgoChatId = resp.chat_id;
+      window._rgoRank = resp.rank;
+      window._rgoTotal = resp.total_rgo;
       document.getElementById('access-denied').style.display = 'none';
       document.getElementById('app-content').style.display = 'none';
-      document.getElementById('rgo-dashboard').style.display = 'block';
+      document.getElementById('rgo-dashboard').style.display = 'flex';
 
-      // Set RGO name and rank
+      // Set greeting
       const nameEl = document.getElementById('rgo-dash-name');
-      if (nameEl) nameEl.textContent = resp.first_name || 'РГО';
-      const chatEl = document.getElementById('rgo-dash-chat');
-      if (chatEl) chatEl.textContent = resp.chat_title || '';
-      if (resp.rank && resp.total_rgo) {
-        const rankEl = document.getElementById('rgo-rank-badge');
-        if (rankEl) {
-          rankEl.textContent = `🏅 ${resp.rank} из ${resp.total_rgo} по активности`;
-          rankEl.style.display = 'inline-block';
-        }
+      if (nameEl) nameEl.textContent = `Привет, ${resp.first_name || 'друг'} 👋`;
+      const dateEl = document.getElementById('rgo-dash-date');
+      if (dateEl) {
+        const now = new Date();
+        const days = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+        const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+        dateEl.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
       }
 
-      // Auto-load tips on open
-      loadRgoTips();
+      // Auto-load home tab
+      loadRgoHome();
       return true;
     } else {
       document.getElementById('access-denied').style.display = 'block';
@@ -64,165 +64,242 @@ async function checkAccess() {
   }
 }
 
-// ── RGO Dashboard functions ──────────────────────────
+// ── RGO Dashboard — friendly AI helper ───────────────
 
-async function loadRgoTips() {
+function switchRgoTab(tab) {
+  ['home', 'tasks', 'team', 'analytics'].forEach(t => {
+    const el = document.getElementById('rgo-tab-' + t);
+    if (el) el.style.display = t === tab ? 'block' : 'none';
+    const nav = document.getElementById('rd-nav-' + t);
+    if (nav) nav.classList.toggle('active', t === tab);
+  });
+  if (tab === 'home') loadRgoHome();
+  else if (tab === 'tasks') loadRgoTasks();
+  else if (tab === 'team') loadRgoTeam();
+  else if (tab === 'analytics') loadRgoAnalytics();
+}
+
+async function loadRgoHome() {
   const container = document.getElementById('rgo-tips-content');
   if (!container) return;
-  container.innerHTML = '<div class="rgo-loading">Загрузка...</div>';
+  container.innerHTML = '<div class="rd-loading">Загрузка...</div>';
 
   try {
-    const data = await apiCall('/api/rgo/tips');
+    const [tips, team] = await Promise.all([
+      apiCall('/api/rgo/tips'),
+      apiCall('/api/rgo/team'),
+    ]);
     let html = '';
 
-    // Focus items (overdue tasks)
-    if (data.focus && data.focus.length > 0) {
-      html += '<div class="rgo-card"><div class="rgo-card-title">🎯 Фокус на сегодня</div>';
-      data.focus.forEach(f => {
-        const cls = f.status === 'overdue' ? 'rgo-item-red' : 'rgo-item';
-        html += `<div class="${cls}">• ${f.text}</div>`;
+    // Focus block (green)
+    const focusItems = [];
+    if (tips.focus) tips.focus.forEach(f => focusItems.push(f.text));
+    if (tips.glossary) tips.glossary.forEach(g => focusItems.push('От НУ: ' + g.text.replace(/🔴\s?/, '')));
+
+    if (focusItems.length > 0) {
+      html += '<div class="rd-focus"><div class="rd-focus-label">фокус на сегодня</div>';
+      focusItems.slice(0, 3).forEach((text, i) => {
+        html += `<div class="rd-focus-item"><div class="rd-focus-num">${i+1}</div><div class="rd-focus-text">${text}</div></div>`;
       });
       html += '</div>';
     }
 
-    // Glossary orders from НУ
-    if (data.glossary && data.glossary.length > 0) {
-      html += '<div class="rgo-card"><div class="rgo-card-title">📋 Поручения НУ</div>';
-      data.glossary.forEach(g => {
-        const cls = g.priority === 'urgent' ? 'rgo-item-red' : 'rgo-item';
-        html += `<div class="${cls}">• ${g.text}</div>`;
+    // AI tips (purple) — from recommendation
+    if (tips.recommendation) {
+      html += '<div class="rd-tips"><div class="rd-tips-label">замечаю кое-что</div><div class="rd-tips-sub">для тебя</div>';
+      // Split recommendation by newlines into separate tips
+      const lines = tips.recommendation.replace(/<[^>]+>/g, '').split('\n').filter(l => l.trim().length > 10);
+      lines.slice(0, 3).forEach(line => {
+        html += `<div class="rd-tips-item">${line.trim()}</div>`;
       });
       html += '</div>';
     }
 
-    // Recommendation
-    if (data.recommendation) {
-      html += '<div class="rgo-card"><div class="rgo-card-title">💡 Рекомендация на сегодня</div>';
-      html += `<div class="rgo-rec-text">${data.recommendation}</div>`;
-      if (data.generated_at) {
-        html += `<div class="rgo-time">Обновлено: ${new Date(data.generated_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</div>`;
+    // Team dots
+    if (team.top_week && team.top_week.length > 0) {
+      html += '<div class="rd-team-dots-block"><div class="rd-section-label">команда</div><div class="rd-team-dots">';
+      const todayActive = new Set();
+      // Assume top_week names are active this week
+      team.top_week.forEach(p => {
+        html += `<div class="rd-team-person"><span class="rd-dot rd-dot-green"></span>${p.name.split(' ')[0]}</div>`;
+        todayActive.add(p.name);
+      });
+      if (team.silent_members) {
+        team.silent_members.forEach(name => {
+          if (!todayActive.has(name)) {
+            html += `<div class="rd-team-person"><span class="rd-dot rd-dot-red"></span>${name.split(' ')[0]}</div>`;
+          }
+        });
       }
-      html += '</div>';
+      html += '</div></div>';
     }
 
-    if (!html) html = '<div class="rgo-empty">Нет данных на сегодня</div>';
+    // Analytics mini
+    html += `<div class="rd-analytics-mini"><div class="rd-section-label">аналитика</div>
+      <div class="rd-an-row">
+        <div class="rd-an-card"><div class="rd-an-num">${team.today?.messages || 0}</div><div class="rd-an-sub">сообщений сегодня</div></div>
+        <div class="rd-an-card"><div class="rd-an-num">${team.today?.participants || 0}</div><div class="rd-an-sub">участников</div></div>
+      </div></div>`;
+
+    if (!html) html = '<div class="rd-empty">Пока нет данных</div>';
     container.innerHTML = html;
   } catch (e) {
-    container.innerHTML = '<div class="rgo-error">Ошибка загрузки</div>';
+    container.innerHTML = '<div class="rd-error">Ошибка загрузки</div>';
   }
 }
 
 async function loadRgoTasks() {
   const container = document.getElementById('rgo-tasks-content');
   if (!container) return;
-  container.innerHTML = '<div class="rgo-loading">Загрузка...</div>';
+  container.innerHTML = '<div class="rd-loading">Загрузка...</div>';
 
   try {
     const data = await apiCall('/api/rgo/tasks');
     let html = '';
 
-    // Stats bar
-    html += `<div class="rgo-stats-bar">
-      <div class="rgo-stat"><span class="rgo-stat-num">${data.stats.open}</span><span class="rgo-stat-label">Открыто</span></div>
-      <div class="rgo-stat rgo-stat-red"><span class="rgo-stat-num">${data.stats.overdue}</span><span class="rgo-stat-label">Просрочено</span></div>
-      <div class="rgo-stat rgo-stat-green"><span class="rgo-stat-num">${data.stats.closed_today}</span><span class="rgo-stat-label">Закрыто сегодня</span></div>
+    // Counters
+    html += `<div class="rd-counters">
+      <div class="rd-counter"><div class="rd-counter-num rd-counter-num-fire">${data.stats.overdue}</div><div class="rd-counter-label">горят 🔥</div></div>
+      <div class="rd-counter"><div class="rd-counter-num rd-counter-num-open">${data.stats.open}</div><div class="rd-counter-label">открыто</div></div>
+      <div class="rd-counter"><div class="rd-counter-num rd-counter-num-done">${data.stats.closed_today}</div><div class="rd-counter-label">готово сегодня</div></div>
     </div>`;
 
-    // Glossary
+    // НУ orders
     if (data.glossary && data.glossary.length > 0) {
-      html += '<div class="rgo-card"><div class="rgo-card-title">📋 Поручения НУ</div>';
+      html += '<div class="rd-nu-block"><div class="rd-nu-label">от НУ</div>';
       data.glossary.forEach(g => {
-        html += `<div class="rgo-item-red">• ${g.text}</div>`;
+        html += `<div class="rd-nu-item">${g.text}</div>`;
       });
       html += '</div>';
     }
 
     // Tasks
     if (data.tasks && data.tasks.length > 0) {
-      html += '<div class="rgo-card"><div class="rgo-card-title">📝 Задачи</div>';
       data.tasks.forEach(t => {
-        const cls = t.status === 'overdue' ? 'rgo-task-overdue' : 'rgo-task';
-        const badge = t.status === 'overdue' ? '<span class="rgo-badge-red">просрочено</span>' : '';
+        const isFire = t.status === 'overdue';
+        const cls = isFire ? 'rd-task-card rd-task-fire' : 'rd-task-card';
+        const days = t.due_date ? Math.max(0, Math.floor((Date.now() - new Date(t.due_date)) / 86400000)) : 0;
+        const meta = isFire ? `<div class="rd-task-meta-fire">🔥 горит ${days} дн.</div>` :
+          `<div class="rd-task-meta">${t.assigner || ''}</div>`;
         html += `<div class="${cls}">
-          <div class="rgo-task-text">${badge} ${t.text}</div>
-          <div class="rgo-task-meta">${t.assigner || ''} ${t.due_date ? '• до ' + t.due_date : ''}</div>
-          <button class="rgo-task-close" onclick="closeTask(${t.id})">✓ Выполнено</button>
+          <div class="rd-task-title">${t.text}</div>
+          ${meta}
+          <button class="rd-task-btn" onclick="closeTask(${t.id})">готово ✓</button>
         </div>`;
       });
-      html += '</div>';
     } else {
-      html += '<div class="rgo-empty">Нет открытых задач 🎉</div>';
+      html += '<div class="rd-empty">Нет открытых задач 🎉</div>';
     }
 
     container.innerHTML = html;
   } catch (e) {
-    container.innerHTML = '<div class="rgo-error">Ошибка загрузки</div>';
+    container.innerHTML = '<div class="rd-error">Ошибка загрузки</div>';
   }
 }
 
 async function loadRgoTeam() {
   const container = document.getElementById('rgo-team-content');
   if (!container) return;
-  container.innerHTML = '<div class="rgo-loading">Загрузка...</div>';
+  container.innerHTML = '<div class="rd-loading">Загрузка...</div>';
 
   try {
     const data = await apiCall('/api/rgo/team');
     let html = '';
 
-    // Today metrics
-    html += `<div class="rgo-stats-bar">
-      <div class="rgo-stat"><span class="rgo-stat-num">${data.today.messages}</span><span class="rgo-stat-label">Сообщений</span></div>
-      <div class="rgo-stat"><span class="rgo-stat-num">${data.today.participants}</span><span class="rgo-stat-label">Участников</span></div>
-      <div class="rgo-stat"><span class="rgo-stat-num rgo-stat-small">${data.today.last_message}</span><span class="rgo-stat-label">Посл. сообщение</span></div>
-    </div>`;
-
-    // Silent members
-    if (data.silent_members && data.silent_members.length > 0) {
-      html += '<div class="rgo-card"><div class="rgo-card-title">🔇 Молчат сегодня</div>';
+    // Member grid
+    const todayUserNames = new Set();
+    html += '<div class="rd-member-grid">';
+    if (data.top_week) {
+      data.top_week.forEach(p => {
+        const isSilent = data.silent_members && data.silent_members.includes(p.name);
+        const dotColor = isSilent ? '#ffc107' : '#4caf50';
+        const sub = isSilent ? 'молчит сегодня' : 'активен';
+        html += `<div class="rd-member-card"><span class="rd-member-dot" style="background:${dotColor}"></span><div><div class="rd-member-name">${p.name.split(' ')[0]}</div><div class="rd-member-sub">${sub}</div></div></div>`;
+        todayUserNames.add(p.name);
+      });
+    }
+    if (data.silent_members) {
       data.silent_members.forEach(name => {
-        html += `<div class="rgo-item-yellow">• ${name}</div>`;
+        if (!todayUserNames.has(name)) {
+          html += `<div class="rd-member-card"><span class="rd-member-dot" style="background:#e53935"></span><div><div class="rd-member-name">${name.split(' ')[0]}</div><div class="rd-member-sub">молчит</div></div></div>`;
+        }
+      });
+    }
+    html += '</div>';
+
+    // Attention block
+    if (data.silent_members && data.silent_members.length > 0) {
+      html += '<div class="rd-attention"><div class="rd-attention-label">стоит заглянуть</div>';
+      data.silent_members.forEach(name => {
+        html += `<div class="rd-attention-item">${name} давно не писал — может стоит проверить как дела</div>`;
       });
       html += '</div>';
     }
 
     // Top week
     if (data.top_week && data.top_week.length > 0) {
-      html += '<div class="rgo-card"><div class="rgo-card-title">🏆 Топ за неделю</div>';
+      html += '<div class="rd-top-block"><div class="rd-section-label">топ за неделю</div>';
       data.top_week.forEach((p, i) => {
-        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '  ';
-        html += `<div class="rgo-item">${medal} ${p.name} — <b>${p.messages}</b> сообщ.</div>`;
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '&nbsp;&nbsp;&nbsp;&nbsp;';
+        html += `<div class="rd-top-item">${medal} ${p.name} — <b>${p.messages}</b> сообщ.</div>`;
       });
       html += '</div>';
     }
 
     container.innerHTML = html;
   } catch (e) {
-    container.innerHTML = '<div class="rgo-error">Ошибка загрузки</div>';
+    container.innerHTML = '<div class="rd-error">Ошибка загрузки</div>';
+  }
+}
+
+async function loadRgoAnalytics() {
+  const container = document.getElementById('rgo-analytics-content');
+  if (!container) return;
+  container.innerHTML = '<div class="rd-loading">Загрузка...</div>';
+
+  try {
+    const data = await apiCall('/api/rgo/team');
+    const tasks = await apiCall('/api/rgo/tasks');
+    let html = '';
+
+    // Today metrics
+    html += `<div class="rd-an-section"><div class="rd-section-label">сегодня</div>
+      <div class="rd-an-metrics">
+        <div class="rd-an-metric"><div class="rd-an-big">${data.today?.messages || 0}</div><div class="rd-an-small">сообщений</div></div>
+        <div class="rd-an-metric"><div class="rd-an-big">${data.today?.participants || 0}</div><div class="rd-an-small">участников</div></div>
+        <div class="rd-an-metric"><div class="rd-an-big">${tasks.stats?.open || 0}</div><div class="rd-an-small">задач открыто</div>
+          ${tasks.stats?.overdue ? `<div class="rd-an-trend-red">${tasks.stats.overdue} горят</div>` : ''}
+        </div>
+      </div></div>`;
+
+    // Trend (simplified — compare week data)
+    html += `<div class="rd-an-section"><div class="rd-section-label">тренд за неделю</div>
+      <div class="rd-an-metrics">
+        <div class="rd-an-metric"><div class="rd-an-big">${data.top_week ? data.top_week.reduce((s,p) => s + p.messages, 0) : 0}</div><div class="rd-an-small">сообщений за неделю</div></div>
+        <div class="rd-an-metric"><div class="rd-an-big">${data.top_week?.length || 0}</div><div class="rd-an-small">активных участников</div></div>
+      </div></div>`;
+
+    // Rank
+    if (window._rgoRank && window._rgoTotal) {
+      html += `<div class="rd-an-section"><div class="rd-section-label">среди рго</div>
+        <div class="rd-an-rank"><div class="rd-an-rank-text">🏅 Твоя команда: ${window._rgoRank} из ${window._rgoTotal} по активности</div></div>
+      </div>`;
+    }
+
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = '<div class="rd-error">Ошибка загрузки</div>';
   }
 }
 
 async function closeTask(taskId) {
   try {
     await apiCall(`/api/rgo/tasks/${taskId}/close`, { method: 'POST' });
-    showToast('Задача закрыта');
-    loadRgoTasks(); // reload
+    showToast('Готово ✓');
+    loadRgoTasks();
   } catch (e) {
     showToast('Ошибка');
   }
-}
-
-function openRgoSection(name) {
-  ['tips', 'tasks', 'team'].forEach(s => {
-    const el = document.getElementById('rgo-body-' + s);
-    if (el) el.style.display = s === name ? 'block' : 'none';
-  });
-  document.querySelectorAll('.rgo-tile').forEach(t => t.classList.remove('active'));
-  const active = document.getElementById('rgo-tile-' + name);
-  if (active) active.classList.add('active');
-
-  if (name === 'tips') loadRgoTips();
-  else if (name === 'tasks') loadRgoTasks();
-  else if (name === 'team') loadRgoTeam();
 }
 
 checkAccess();
