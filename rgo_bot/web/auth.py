@@ -5,8 +5,7 @@ https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
 
 - Parses initData query string
 - Verifies HMAC using BOT_TOKEN
-- Checks auth_date freshness (max 1 hour)
-- Checks user.id == ADMIN_TELEGRAM_ID
+- Determines user role: admin / rgo / denied
 """
 from __future__ import annotations
 
@@ -18,8 +17,11 @@ from urllib.parse import parse_qs, unquote
 
 from aiohttp import web
 from loguru import logger
+from sqlalchemy import select
 
 from rgo_bot.bot.config import settings
+from rgo_bot.db.base import async_session
+from rgo_bot.db.models import ParticipantChat
 
 AUTH_MAX_AGE_SEC = 3600  # 1 hour
 
@@ -97,14 +99,48 @@ async def auth_middleware(request: web.Request, handler):
             {"error": "Invalid initData"}, status=401
         )
 
-    # Admin-only check
+    # Determine role
     user_id = user.get("id")
-    if not settings.is_admin(user_id):
+    role, rgo_chat_id = await _get_user_role(user_id)
+
+    if role == "denied":
+        # Allow /api/rgo/role so frontend can show access denied screen
+        if request.path == "/api/rgo/role":
+            request["tg_user"] = user
+            request["role"] = "denied"
+            request["rgo_chat_id"] = None
+            return await handler(request)
         logger.warning("webapp_auth forbidden user_id={}", user_id)
         return web.json_response(
             {"error": "Forbidden"}, status=403
         )
 
-    # Attach user to request
+    # Attach user and role to request
     request["tg_user"] = user
+    request["role"] = role
+    request["rgo_chat_id"] = rgo_chat_id
     return await handler(request)
+
+
+async def _get_user_role(user_id: int) -> tuple[str, int | None]:
+    """Determine user role: 'admin', 'rgo', or 'denied'.
+
+    Returns (role, chat_id). chat_id is set only for RGO users.
+    """
+    if settings.is_admin(user_id):
+        return "admin", None
+
+    # Check if user has RGO role in any monitored chat
+    async with async_session() as session:
+        result = await session.execute(
+            select(ParticipantChat.chat_id)
+            .where(
+                ParticipantChat.user_id == user_id,
+                ParticipantChat.role == "rgo",
+            )
+        )
+        row = result.first()
+        if row:
+            return "rgo", row[0]
+
+    return "denied", None

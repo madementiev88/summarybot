@@ -76,12 +76,14 @@ def create_web_app(bot: Bot) -> web.Application:
     from rgo_bot.web.routes.preza import setup_preza_routes
     from rgo_bot.web.routes.feedback import setup_feedback_routes
     from rgo_bot.web.routes.glossary import setup_glossary_routes
+    from rgo_bot.web.routes.rgo_dashboard import setup_rgo_dashboard_routes
 
     setup_command_routes(app)
     setup_kos_routes(app)
     setup_preza_routes(app)
     setup_feedback_routes(app)
     setup_glossary_routes(app)
+    setup_rgo_dashboard_routes(app)
 
     # Static files (Mini App frontend) with no-cache headers
     @web.middleware

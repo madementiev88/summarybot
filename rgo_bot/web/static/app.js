@@ -16,24 +16,213 @@ if (tg) {
 
 // ── Auth check on load ───────────────────────────────
 
+let userRole = 'denied';
+let rgoChatId = null;
+
 async function checkAccess() {
   try {
-    const resp = await fetch('/api/balance', {
-      headers: { 'Authorization': `tg-init-data ${initData}` }
-    });
-    if (resp.status === 401 || resp.status === 403) {
+    const resp = await apiCall('/api/rgo/role');
+
+    if (resp.role === 'admin') {
+      userRole = 'admin';
+      document.getElementById('access-denied').style.display = 'none';
+      document.getElementById('app-content').style.display = 'block';
+      document.getElementById('rgo-dashboard').style.display = 'none';
+      return true;
+    } else if (resp.role === 'rgo') {
+      userRole = 'rgo';
+      rgoChatId = resp.chat_id;
+      document.getElementById('access-denied').style.display = 'none';
+      document.getElementById('app-content').style.display = 'none';
+      document.getElementById('rgo-dashboard').style.display = 'block';
+
+      // Set RGO name and rank
+      const nameEl = document.getElementById('rgo-dash-name');
+      if (nameEl) nameEl.textContent = resp.first_name || 'РГО';
+      const chatEl = document.getElementById('rgo-dash-chat');
+      if (chatEl) chatEl.textContent = resp.chat_title || '';
+      if (resp.rank && resp.total_rgo) {
+        const rankEl = document.getElementById('rgo-rank-badge');
+        if (rankEl) {
+          rankEl.textContent = `🏅 ${resp.rank} из ${resp.total_rgo} по активности`;
+          rankEl.style.display = 'inline-block';
+        }
+      }
+
+      // Auto-load tips on open
+      loadRgoTips();
+      return true;
+    } else {
       document.getElementById('access-denied').style.display = 'block';
       document.getElementById('app-content').style.display = 'none';
+      document.getElementById('rgo-dashboard').style.display = 'none';
       return false;
     }
-    document.getElementById('access-denied').style.display = 'none';
-    document.getElementById('app-content').style.display = 'block';
-    return true;
   } catch (e) {
-    // Allow if network error (offline dev)
     document.getElementById('app-content').style.display = 'block';
     return true;
   }
+}
+
+// ── RGO Dashboard functions ──────────────────────────
+
+async function loadRgoTips() {
+  const container = document.getElementById('rgo-tips-content');
+  if (!container) return;
+  container.innerHTML = '<div class="rgo-loading">Загрузка...</div>';
+
+  try {
+    const data = await apiCall('/api/rgo/tips');
+    let html = '';
+
+    // Focus items (overdue tasks)
+    if (data.focus && data.focus.length > 0) {
+      html += '<div class="rgo-card"><div class="rgo-card-title">🎯 Фокус на сегодня</div>';
+      data.focus.forEach(f => {
+        const cls = f.status === 'overdue' ? 'rgo-item-red' : 'rgo-item';
+        html += `<div class="${cls}">• ${f.text}</div>`;
+      });
+      html += '</div>';
+    }
+
+    // Glossary orders from НУ
+    if (data.glossary && data.glossary.length > 0) {
+      html += '<div class="rgo-card"><div class="rgo-card-title">📋 Поручения НУ</div>';
+      data.glossary.forEach(g => {
+        const cls = g.priority === 'urgent' ? 'rgo-item-red' : 'rgo-item';
+        html += `<div class="${cls}">• ${g.text}</div>`;
+      });
+      html += '</div>';
+    }
+
+    // Recommendation
+    if (data.recommendation) {
+      html += '<div class="rgo-card"><div class="rgo-card-title">💡 Рекомендация на сегодня</div>';
+      html += `<div class="rgo-rec-text">${data.recommendation}</div>`;
+      if (data.generated_at) {
+        html += `<div class="rgo-time">Обновлено: ${new Date(data.generated_at).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'})}</div>`;
+      }
+      html += '</div>';
+    }
+
+    if (!html) html = '<div class="rgo-empty">Нет данных на сегодня</div>';
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = '<div class="rgo-error">Ошибка загрузки</div>';
+  }
+}
+
+async function loadRgoTasks() {
+  const container = document.getElementById('rgo-tasks-content');
+  if (!container) return;
+  container.innerHTML = '<div class="rgo-loading">Загрузка...</div>';
+
+  try {
+    const data = await apiCall('/api/rgo/tasks');
+    let html = '';
+
+    // Stats bar
+    html += `<div class="rgo-stats-bar">
+      <div class="rgo-stat"><span class="rgo-stat-num">${data.stats.open}</span><span class="rgo-stat-label">Открыто</span></div>
+      <div class="rgo-stat rgo-stat-red"><span class="rgo-stat-num">${data.stats.overdue}</span><span class="rgo-stat-label">Просрочено</span></div>
+      <div class="rgo-stat rgo-stat-green"><span class="rgo-stat-num">${data.stats.closed_today}</span><span class="rgo-stat-label">Закрыто сегодня</span></div>
+    </div>`;
+
+    // Glossary
+    if (data.glossary && data.glossary.length > 0) {
+      html += '<div class="rgo-card"><div class="rgo-card-title">📋 Поручения НУ</div>';
+      data.glossary.forEach(g => {
+        html += `<div class="rgo-item-red">• ${g.text}</div>`;
+      });
+      html += '</div>';
+    }
+
+    // Tasks
+    if (data.tasks && data.tasks.length > 0) {
+      html += '<div class="rgo-card"><div class="rgo-card-title">📝 Задачи</div>';
+      data.tasks.forEach(t => {
+        const cls = t.status === 'overdue' ? 'rgo-task-overdue' : 'rgo-task';
+        const badge = t.status === 'overdue' ? '<span class="rgo-badge-red">просрочено</span>' : '';
+        html += `<div class="${cls}">
+          <div class="rgo-task-text">${badge} ${t.text}</div>
+          <div class="rgo-task-meta">${t.assigner || ''} ${t.due_date ? '• до ' + t.due_date : ''}</div>
+          <button class="rgo-task-close" onclick="closeTask(${t.id})">✓ Выполнено</button>
+        </div>`;
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="rgo-empty">Нет открытых задач 🎉</div>';
+    }
+
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = '<div class="rgo-error">Ошибка загрузки</div>';
+  }
+}
+
+async function loadRgoTeam() {
+  const container = document.getElementById('rgo-team-content');
+  if (!container) return;
+  container.innerHTML = '<div class="rgo-loading">Загрузка...</div>';
+
+  try {
+    const data = await apiCall('/api/rgo/team');
+    let html = '';
+
+    // Today metrics
+    html += `<div class="rgo-stats-bar">
+      <div class="rgo-stat"><span class="rgo-stat-num">${data.today.messages}</span><span class="rgo-stat-label">Сообщений</span></div>
+      <div class="rgo-stat"><span class="rgo-stat-num">${data.today.participants}</span><span class="rgo-stat-label">Участников</span></div>
+      <div class="rgo-stat"><span class="rgo-stat-num rgo-stat-small">${data.today.last_message}</span><span class="rgo-stat-label">Посл. сообщение</span></div>
+    </div>`;
+
+    // Silent members
+    if (data.silent_members && data.silent_members.length > 0) {
+      html += '<div class="rgo-card"><div class="rgo-card-title">🔇 Молчат сегодня</div>';
+      data.silent_members.forEach(name => {
+        html += `<div class="rgo-item-yellow">• ${name}</div>`;
+      });
+      html += '</div>';
+    }
+
+    // Top week
+    if (data.top_week && data.top_week.length > 0) {
+      html += '<div class="rgo-card"><div class="rgo-card-title">🏆 Топ за неделю</div>';
+      data.top_week.forEach((p, i) => {
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '  ';
+        html += `<div class="rgo-item">${medal} ${p.name} — <b>${p.messages}</b> сообщ.</div>`;
+      });
+      html += '</div>';
+    }
+
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = '<div class="rgo-error">Ошибка загрузки</div>';
+  }
+}
+
+async function closeTask(taskId) {
+  try {
+    await apiCall(`/api/rgo/tasks/${taskId}/close`, { method: 'POST' });
+    showToast('Задача закрыта');
+    loadRgoTasks(); // reload
+  } catch (e) {
+    showToast('Ошибка');
+  }
+}
+
+function openRgoSection(name) {
+  ['tips', 'tasks', 'team'].forEach(s => {
+    const el = document.getElementById('rgo-body-' + s);
+    if (el) el.style.display = s === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.rgo-tile').forEach(t => t.classList.remove('active'));
+  const active = document.getElementById('rgo-tile-' + name);
+  if (active) active.classList.add('active');
+
+  if (name === 'tips') loadRgoTips();
+  else if (name === 'tasks') loadRgoTasks();
+  else if (name === 'team') loadRgoTeam();
 }
 
 checkAccess();
