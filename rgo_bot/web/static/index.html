@@ -55,6 +55,12 @@
         <span class="tile-lbl">Преза</span>
         <span class="tile-sub" id="preza-tile-sub">Презентации</span>
       </button>
+      <button class="tile" id="tile-glossary" onclick="openSection('glossary')">
+        <div class="tile-top"></div>
+        <div class="tile-ico-wrap" id="glossary-ico-wrap">&#128203;</div>
+        <span class="tile-lbl">Глоссарий</span>
+        <span class="tile-sub" id="glossary-tile-sub">Поручения</span>
+      </button>
     </div>
   </div>
 
@@ -194,6 +200,27 @@
     </div>
     <div class="hint-block">
       <span class="hint-block-text">Формат: PPTX (PowerPoint)</span>
+    </div>
+  </div>
+
+  <!-- Body: Glossary -->
+  <div class="body-wrap" id="body-glossary" style="display:none;">
+    <div class="section-card">
+      <div class="sc-header">
+        <div class="sc-dot" style="background:var(--accent);" id="glossary-sc-dot"></div>
+        <span class="sc-title" id="glossary-sc-title">Поручения для РГО</span>
+      </div>
+      <div class="kos-body">
+        <div class="kos-timer" id="glossary-timer">00:00</div>
+        <div class="kos-ring" id="glossary-ring" onclick="toggleGlossaryRec()">
+          <div class="kos-inner" id="glossary-inner">&#128203;</div>
+        </div>
+        <div class="kos-status" id="glossary-status">Надиктуйте поручения для РГО</div>
+        <div class="kos-hint" id="glossary-hint">Поручения будут добавлены<br>в утренние рекомендации на завтра</div>
+      </div>
+    </div>
+    <div class="hint-block">
+      <span class="hint-block-text">Укажите конкретных РГО или поручение для всех</span>
     </div>
   </div>
 

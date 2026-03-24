@@ -308,3 +308,23 @@ class PresentationPreference(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now(),
         onupdate=func.now(),
     )
+
+
+# ── glossary_orders ────────────────────────────────────
+
+
+class GlossaryOrder(Base):
+    __tablename__ = "glossary_orders"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    transcript_text: Mapped[str | None] = mapped_column(Text)
+    order_text: Mapped[str] = mapped_column(Text, nullable=False)
+    target_rgo_ids: Mapped[list | None] = mapped_column(JSONB)  # list of chat_ids, null = all
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="active"
+    )  # "active" / "done" / "cancelled"
+    target_date: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )

@@ -89,12 +89,28 @@ async def send_morning_recommendations(bot: Bot) -> int:
             else:
                 open_tasks_text = "Нет открытых поручений."
 
+            # Get glossary orders for this RGO
+            from rgo_bot.db.crud.glossary_orders import get_active_orders_for_chat
+
+            async with async_session() as session:
+                glossary_orders = await get_active_orders_for_chat(
+                    session, chat_id, today
+                ) if chat_id else []
+            if glossary_orders:
+                glossary_lines = [
+                    f"• {o.order_text}" for o in glossary_orders
+                ]
+                glossary_text = "\n".join(glossary_lines)
+            else:
+                glossary_text = "Нет поручений от НУ."
+
             # Generate recommendation via Claude
             prompt = load_prompt("rgo_recommendation").format(
                 rgo_name=rgo.full_name or str(rgo.user_id),
                 yesterday=yesterday.isoformat(),
                 messages_summary=messages_summary[:3000],
                 open_tasks=open_tasks_text,
+                glossary_orders=glossary_text,
             )
 
             response = await claude_client.complete(

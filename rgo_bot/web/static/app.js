@@ -44,8 +44,9 @@ let currentSection = 'default';
 const recorder = new AudioRecorder();
 let kosRecording = false;
 let prezaRecording = false;
+let glossaryRecording = false;
 
-const sections = ['default', 'rgo', 'kos', 'preza'];
+const sections = ['default', 'rgo', 'kos', 'preza', 'glossary'];
 const cats = ['c-sys', 'c-rep', 'c-gr', 'c-por', 'c-an', 'c-us', 'c-st'];
 
 // Commands that need text input
@@ -99,7 +100,7 @@ function openSection(name) {
 
   // Header
   document.getElementById('hdr-back').style.display = 'inline';
-  const titles = { rgo: 'РГО — Мониторинг', kos: 'КОС — Совещания', preza: 'Преза — Презентации' };
+  const titles = { rgo: 'РГО — Мониторинг', kos: 'КОС — Совещания', preza: 'Преза — Презентации', glossary: 'Глоссарий — Поручения' };
   document.getElementById('hdr-title').textContent = titles[name] || 'РСО';
 
   // Hide input dialog when switching
@@ -378,6 +379,85 @@ function resetPrezaUI() {
   document.getElementById('preza-sc-dot').style.background = 'var(--accent)';
   document.getElementById('preza-sc-title').textContent = 'Создать презентацию';
   document.getElementById('preza-hint').innerHTML = 'Наговорите голосом тему,<br>содержание и стиль презентации.<br>Готовый файл придёт в бот.';
+}
+
+// ── Glossary recording ────────────────────────────────
+
+async function toggleGlossaryRec() {
+  if (!glossaryRecording) {
+    try {
+      await recorder.start((secs) => {
+        document.getElementById('glossary-timer').textContent = formatTime(secs);
+      });
+    } catch (err) {
+      showToast(err.message || 'Не удалось начать запись');
+      return;
+    }
+
+    glossaryRecording = true;
+    const tile = document.getElementById('tile-glossary');
+    tile.classList.add('recording');
+    document.getElementById('glossary-ico-wrap').classList.add('rec-bg');
+    document.getElementById('glossary-ico-wrap').textContent = '\u23F2';
+    document.getElementById('glossary-tile-sub').className = 'tile-sub-rec';
+    document.getElementById('glossary-tile-sub').textContent = 'Идёт запись';
+
+    document.getElementById('glossary-ring').classList.add('rec');
+    document.getElementById('glossary-inner').classList.add('rec');
+    document.getElementById('glossary-inner').textContent = '\u23F2';
+    document.getElementById('glossary-timer').classList.add('show');
+    document.getElementById('glossary-sc-dot').style.background = 'var(--red)';
+    document.getElementById('glossary-sc-title').textContent = 'Запись поручений';
+    document.getElementById('glossary-status').innerHTML = '<span class="rec-dot"></span>Запись идёт...';
+    document.getElementById('glossary-hint').textContent = 'Нажмите ещё раз для остановки';
+
+  } else {
+    const blob = await recorder.stop();
+    glossaryRecording = false;
+    resetGlossaryUI();
+
+    if (!blob || blob.size === 0) {
+      showToast('Запись пуста');
+      return;
+    }
+
+    showProcessing('Расшифровка аудио...', 'Whisper API');
+
+    try {
+      const result = await apiUpload('/api/glossary/upload', blob, 'glossary.webm');
+
+      if (result.task_id) {
+        await pollTask(result.task_id, [
+          { step: 'transcribing', text: 'Расшифровка аудио...', sub: 'Whisper API' },
+          { step: 'analyzing', text: 'Извлечение поручений...', sub: 'Claude AI' },
+        ]);
+      } else if (result.error) {
+        hideProcessing();
+        showToast(result.error);
+      }
+    } catch (err) {
+      hideProcessing();
+      showToast('Ошибка отправки аудио');
+    }
+  }
+}
+
+function resetGlossaryUI() {
+  const tile = document.getElementById('tile-glossary');
+  tile.classList.remove('recording');
+  document.getElementById('glossary-ico-wrap').classList.remove('rec-bg');
+  document.getElementById('glossary-ico-wrap').textContent = '\uD83D\uDCCB';
+  document.getElementById('glossary-tile-sub').className = 'tile-sub';
+  document.getElementById('glossary-tile-sub').textContent = 'Поручения';
+
+  document.getElementById('glossary-ring').classList.remove('rec');
+  document.getElementById('glossary-inner').classList.remove('rec');
+  document.getElementById('glossary-inner').textContent = '\uD83D\uDCCB';
+  document.getElementById('glossary-timer').classList.remove('show');
+  document.getElementById('glossary-sc-dot').style.background = 'var(--accent)';
+  document.getElementById('glossary-sc-title').textContent = 'Поручения для РГО';
+  document.getElementById('glossary-status').textContent = 'Надиктуйте поручения для РГО';
+  document.getElementById('glossary-hint').innerHTML = 'Поручения будут добавлены<br>в утренние рекомендации на завтра';
 }
 
 // ── Task polling ──────────────────────────────────────

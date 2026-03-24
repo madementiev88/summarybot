@@ -319,6 +319,23 @@ async def _reduce_phase(
         )
         total_participants = result.scalar_one()
 
+    # Get glossary orders status for today
+    from rgo_bot.db.crud.glossary_orders import get_active_orders_for_date
+
+    async with async_session() as session:
+        glossary_orders = await get_active_orders_for_date(session, report_date)
+
+    if glossary_orders:
+        glossary_lines = []
+        for o in glossary_orders:
+            target = "все РГО" if o.target_rgo_ids is None else ", ".join(
+                registry_get_title(cid) for cid in o.target_rgo_ids
+            )
+            glossary_lines.append(f"• {o.order_text} → {target}")
+        glossary_status = "\n".join(glossary_lines)
+    else:
+        glossary_status = "Нет поручений от НУ на сегодня."
+
     # Fill template
     user_prompt = report_template.format(
         date=report_date.strftime("%d.%m.%Y"),
@@ -326,6 +343,7 @@ async def _reduce_phase(
         total_participants=total_participants,
         chat_stats=chat_stats,
         chat_summaries=chat_summaries,
+        glossary_status=glossary_status,
     )
 
     response = await claude_client.complete(
