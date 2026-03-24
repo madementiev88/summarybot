@@ -94,13 +94,25 @@ def create_web_app(bot: Bot) -> web.Application:
     app.middlewares.insert(0, no_cache_middleware)
     app.router.add_static("/static/", path=str(STATIC_DIR), name="static")
 
-    # Serve index.html at root (no-cache to prevent Telegram WebView caching)
-    async def index_handler(request: web.Request) -> web.FileResponse:
-        resp = web.FileResponse(STATIC_DIR / "index.html")
-        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        resp.headers["Pragma"] = "no-cache"
-        resp.headers["Expires"] = "0"
-        return resp
+    # Serve index.html with aggressive no-cache + version bust
+    import time as _time
+    _boot_version = str(int(_time.time()))
+
+    async def index_handler(request: web.Request) -> web.Response:
+        # Read and inject version into static file URLs to bust cache
+        html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+        html = html.replace('"/static/style.css"', f'"/static/style.css?v={_boot_version}"')
+        html = html.replace('"/static/app.js"', f'"/static/app.js?v={_boot_version}"')
+        html = html.replace('"/static/recorder.js"', f'"/static/recorder.js?v={_boot_version}"')
+        return web.Response(
+            text=html,
+            content_type="text/html",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+            },
+        )
 
     app.router.add_get("/", index_handler)
 
