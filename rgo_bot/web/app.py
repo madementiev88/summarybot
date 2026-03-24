@@ -81,12 +81,26 @@ def create_web_app(bot: Bot) -> web.Application:
     setup_preza_routes(app)
     setup_feedback_routes(app)
 
-    # Static files (Mini App frontend)
+    # Static files (Mini App frontend) with no-cache headers
+    @web.middleware
+    async def no_cache_middleware(request: web.Request, handler):
+        resp = await handler(request)
+        if request.path.startswith("/static/") or request.path == "/":
+            resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            resp.headers["Pragma"] = "no-cache"
+            resp.headers["Expires"] = "0"
+        return resp
+
+    app.middlewares.insert(0, no_cache_middleware)
     app.router.add_static("/static/", path=str(STATIC_DIR), name="static")
 
-    # Serve index.html at root
+    # Serve index.html at root (no-cache to prevent Telegram WebView caching)
     async def index_handler(request: web.Request) -> web.FileResponse:
-        return web.FileResponse(STATIC_DIR / "index.html")
+        resp = web.FileResponse(STATIC_DIR / "index.html")
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        resp.headers["Pragma"] = "no-cache"
+        resp.headers["Expires"] = "0"
+        return resp
 
     app.router.add_get("/", index_handler)
 
