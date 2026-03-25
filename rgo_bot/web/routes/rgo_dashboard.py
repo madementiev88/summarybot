@@ -36,6 +36,7 @@ def setup_rgo_dashboard_routes(app: web.Application) -> None:
     app.router.add_post("/api/rgo/tasks/{task_id}/close", handle_task_close)
     app.router.add_get("/api/rgo/team", handle_team)
     app.router.add_post("/api/rgo/advisor", handle_advisor)
+    app.router.add_post("/api/nu/advisor", handle_nu_advisor)
 
 
 async def handle_role(request: web.Request) -> web.Response:
@@ -424,6 +425,67 @@ async def handle_advisor(request: web.Request) -> web.Response:
         )
     except Exception:
         logger.exception("advisor_log_save_failed user_id={}", user_id)
+
+    return web.json_response({
+        "answer": result["answer"],
+        "error": False,
+    })
+
+
+async def handle_nu_advisor(request: web.Request) -> web.Response:
+    """POST /api/nu/advisor — Ask NU AI advisor a question."""
+    role = request.get("role")
+
+    # Only admins can use NU advisor
+    if role != "admin":
+        return web.json_response({"error": "Forbidden"}, status=403)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+
+    question = (data.get("question") or "").strip()
+    if not question:
+        return web.json_response({"error": "Empty question"}, status=400)
+
+    # Sanitize history
+    client_history = data.get("history", [])
+    history = []
+    for msg in client_history[-6:]:
+        if isinstance(msg, dict) and msg.get("role") in ("user", "assistant"):
+            history.append({
+                "role": msg["role"],
+                "content": str(msg.get("content", ""))[:2000],
+            })
+
+    from rgo_bot.bot.services.nu_advisor import get_nu_advisor_response
+    from rgo_bot.db.crud.nu_advisor import save_nu_advisor_log
+
+    result = await get_nu_advisor_response(
+        question=question,
+        history=history,
+    )
+
+    if result["error"]:
+        logger.error("nu_advisor_error error={}", result["error"])
+        return web.json_response({
+            "answer": "⚠️ Советник временно недоступен. Попробуй через несколько минут.",
+            "error": True,
+        })
+
+    # Save to log
+    try:
+        await save_nu_advisor_log(
+            question=question,
+            answer=result["answer"],
+            context_type=result["context_type"],
+            target_rgo_user_id=result["target_rgo_user_id"],
+            prompt_tokens=result["tokens_in"],
+            completion_tokens=result["tokens_out"],
+        )
+    except Exception:
+        logger.exception("nu_advisor_log_save_failed")
 
     return web.json_response({
         "answer": result["answer"],

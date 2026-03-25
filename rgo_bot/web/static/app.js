@@ -28,6 +28,8 @@ async function checkAccess() {
       document.getElementById('access-denied').style.display = 'none';
       document.getElementById('app-content').style.display = 'block';
       document.getElementById('rgo-dashboard').style.display = 'none';
+      // Show advisor FAB for admin
+      document.getElementById('advisor-fab').style.display = 'flex';
       return true;
     } else if (resp.role === 'rgo') {
       userRole = 'rgo';
@@ -977,7 +979,8 @@ async function sendAdvisorQuestion() {
   _showAdvisorTyping();
 
   try {
-    const resp = await fetch('/api/rgo/advisor', {
+    const advisorUrl = userRole === 'admin' ? '/api/nu/advisor' : '/api/rgo/advisor';
+    const resp = await fetch(advisorUrl, {
       method: 'POST',
       headers: {
         'Authorization': `tg-init-data ${window.Telegram?.WebApp?.initData || ''}`,

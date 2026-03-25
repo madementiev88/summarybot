@@ -342,3 +342,20 @@ class RGOAdvisorLog(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+
+class NUAdvisorLog(Base):
+    __tablename__ = "nu_advisor_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    question: Mapped[str] = mapped_column(Text, nullable=False)
+    answer: Mapped[str] = mapped_column(Text, nullable=False)
+    context_type: Mapped[str] = mapped_column(
+        String(16), nullable=False
+    )  # 'single_rgo' | 'team' | 'no_data'
+    target_rgo_user_id: Mapped[int | None] = mapped_column(BigInteger)
+    prompt_tokens: Mapped[int | None] = mapped_column(Integer)
+    completion_tokens: Mapped[int | None] = mapped_column(Integer)
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
