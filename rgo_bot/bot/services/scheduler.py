@@ -210,16 +210,6 @@ async def daily_report_job(bot: Bot) -> None:
                 load_chart = await generate_load_chart(session, today, chat_titles)
                 if load_chart:
                     await send_chart_to_admin(bot, load_chart, "📊 Нагрузка по чатам")
-                    await asyncio.sleep(0.3)
-
-                heatmap = await generate_heatmap(session, today, chat_titles)
-                if heatmap:
-                    await send_chart_to_admin(bot, heatmap, "🕐 Активность по часам")
-                    await asyncio.sleep(0.3)
-
-                activity = await generate_activity_chart(session, today, chat_titles)
-                if activity:
-                    await send_chart_to_admin(bot, activity, "👥 Рейтинг участников")
 
             if result.failed_chats:
                 from rgo_bot.bot.services.chat_registry import get_chat_title

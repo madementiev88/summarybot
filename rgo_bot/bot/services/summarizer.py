@@ -140,9 +140,12 @@ async def _map_phase(
     system_prompt = load_prompt("system")
     chat_prompt_template = load_prompt("chat_summary")
 
-    semaphore = asyncio.Semaphore(3)
+    semaphore = asyncio.Semaphore(2)  # Max 2 parallel to avoid API overload
 
-    async def bounded_summarize(chat_id: int) -> ChatSummaryResult:
+    async def bounded_summarize(chat_id: int, idx: int) -> ChatSummaryResult:
+        # Stagger requests to reduce API pressure
+        if idx > 0:
+            await asyncio.sleep(idx * 1.5)
         async with semaphore:
             return await _summarize_single_chat(
                 chat_id, report_date, tz, system_prompt, chat_prompt_template
@@ -150,10 +153,10 @@ async def _map_phase(
 
     # Only process chats not already cached
     tasks = []
-    for chat_id in get_active_chat_ids():
+    for idx, chat_id in enumerate(get_active_chat_ids()):
         if chat_id in cached_chat_ids:
             continue
-        tasks.append(bounded_summarize(chat_id))
+        tasks.append(bounded_summarize(chat_id, idx))
 
     new_results = await asyncio.gather(*tasks, return_exceptions=True)
 

@@ -141,9 +141,10 @@ class ClaudeClient:
         # Check budget
         await self._check_budget()
 
-        # Retry with exponential backoff
+        # Retry with exponential backoff (5 attempts for overload resilience)
+        max_attempts = 5
         last_error: Exception | None = None
-        for attempt in range(3):
+        for attempt in range(max_attempts):
             try:
                 response = await self._call_api(
                     system_prompt, user_prompt, max_tokens, temperature
@@ -171,15 +172,20 @@ class ClaudeClient:
                 anthropic.RateLimitError,
                 anthropic.InternalServerError,
                 anthropic.APIConnectionError,
+                anthropic.APIStatusError,
             ) as e:
+                # Only retry on overload (529) or known transient errors
+                if isinstance(e, anthropic.APIStatusError) and e.status_code not in (429, 500, 502, 503, 529):
+                    raise
                 last_error = e
                 self._cb.record_failure()
-                if attempt == 2:
+                if attempt == max_attempts - 1:
                     raise
-                delay = (2 ** (attempt + 1)) + random.uniform(0, 1)
+                delay = (2 ** (attempt + 1)) + random.uniform(0, 2)
                 logger.warning(
-                    "claude_retry attempt={} delay={:.1f}s error={}",
+                    "claude_retry attempt={}/{} delay={:.1f}s error={}",
                     attempt + 1,
+                    max_attempts,
                     delay,
                     str(e),
                 )
