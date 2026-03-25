@@ -35,6 +35,7 @@ def setup_rgo_dashboard_routes(app: web.Application) -> None:
     app.router.add_get("/api/rgo/tasks", handle_tasks)
     app.router.add_post("/api/rgo/tasks/{task_id}/close", handle_task_close)
     app.router.add_get("/api/rgo/team", handle_team)
+    app.router.add_post("/api/rgo/advisor", handle_advisor)
 
 
 async def handle_role(request: web.Request) -> web.Response:
@@ -361,4 +362,70 @@ async def handle_team(request: web.Request) -> web.Response:
         },
         "silent_members": silent_members[:10],
         "top_week": top_week,
+    })
+
+
+async def handle_advisor(request: web.Request) -> web.Response:
+    """POST /api/rgo/advisor — Ask AI advisor a question."""
+    role = request.get("role")
+    user = request.get("tg_user", {})
+    user_id = user.get("id")
+    rgo_chat_id = request.get("rgo_chat_id")
+
+    # Only RGO users can use advisor
+    if role != "rgo" or not rgo_chat_id:
+        return web.json_response({"error": "Forbidden"}, status=403)
+
+    try:
+        data = await request.json()
+    except Exception:
+        return web.json_response({"error": "Invalid JSON"}, status=400)
+
+    question = (data.get("question") or "").strip()
+    if not question:
+        return web.json_response({"error": "Empty question"}, status=400)
+
+    # Get history from request (client sends last messages)
+    client_history = data.get("history", [])
+    # Sanitize history — only keep role and content
+    history = []
+    for msg in client_history[-6:]:
+        if isinstance(msg, dict) and msg.get("role") in ("user", "assistant"):
+            history.append({
+                "role": msg["role"],
+                "content": str(msg.get("content", ""))[:2000],
+            })
+
+    from rgo_bot.bot.services.advisor import get_advisor_response
+    from rgo_bot.db.crud.advisor import save_advisor_log
+
+    result = await get_advisor_response(
+        question=question,
+        history=history,
+        user_id=user_id,
+        chat_id=rgo_chat_id,
+    )
+
+    if result["error"]:
+        logger.error("advisor_error user_id={} error={}", user_id, result["error"])
+        return web.json_response({
+            "answer": "⚠️ Советник временно недоступен. Попробуй через несколько минут.",
+            "error": True,
+        })
+
+    # Save to log
+    try:
+        await save_advisor_log(
+            rgo_user_id=user_id,
+            question=question,
+            answer=result["answer"],
+            prompt_tokens=result["tokens_in"],
+            completion_tokens=result["tokens_out"],
+        )
+    except Exception:
+        logger.exception("advisor_log_save_failed user_id={}", user_id)
+
+    return web.json_response({
+        "answer": result["answer"],
+        "error": False,
     })

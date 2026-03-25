@@ -280,6 +280,32 @@
     <button class="report-btn" onclick="openModal()">сообщить об ошибке</button>
   </div>
 
+  <!-- Advisor FAB (RGO only) -->
+  <button class="advisor-fab" id="advisor-fab" style="display:none;" onclick="openAdvisor()">
+    <span>&#128172;</span>
+  </button>
+
+  <!-- Advisor Chat Panel -->
+  <div class="advisor-overlay" id="advisor-overlay">
+    <div class="advisor-panel">
+      <div class="advisor-handle"></div>
+      <div class="advisor-header">
+        <span class="advisor-title">&#128172; Советник</span>
+        <button class="advisor-close" onclick="closeAdvisor()">&#10005;</button>
+      </div>
+      <div class="advisor-messages" id="advisor-messages">
+        <div class="adv-msg adv-msg-bot">
+          <div class="adv-msg-label">советник</div>
+          <div class="adv-msg-bubble">Задай вопрос по управлению командой, конверсии, продуктам или любой управленческой задаче.</div>
+        </div>
+      </div>
+      <div class="advisor-input-wrap">
+        <input class="advisor-input" id="advisor-input" placeholder="Напиши вопрос..." maxlength="500" onkeydown="if(event.key==='Enter')sendAdvisorQuestion()">
+        <button class="advisor-send" id="advisor-send" onclick="sendAdvisorQuestion()">&#10148;</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Processing overlay -->
   <div class="processing-overlay" id="processing">
     <div class="proc-spinner"></div>

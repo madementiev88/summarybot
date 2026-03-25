@@ -49,6 +49,9 @@ async function checkAccess() {
         dateEl.textContent = `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
       }
 
+      // Show advisor FAB for RGO
+      document.getElementById('advisor-fab').style.display = 'flex';
+
       // Auto-load home tab
       loadRgoHome();
       return true;
@@ -893,3 +896,124 @@ document.addEventListener('keydown', (e) => {
     submitInput();
   }
 });
+
+// ── Advisor Chat ──────────────────────────────────────
+
+let advisorHistory = [];
+let advisorBusy = false;
+
+function openAdvisor() {
+  document.getElementById('advisor-overlay').classList.add('open');
+  document.getElementById('advisor-input').focus();
+}
+
+function closeAdvisor() {
+  document.getElementById('advisor-overlay').classList.remove('open');
+}
+
+function _addAdvisorMsg(role, text) {
+  const container = document.getElementById('advisor-messages');
+  const div = document.createElement('div');
+  div.className = `adv-msg adv-msg-${role === 'user' ? 'user' : 'bot'}`;
+
+  const label = document.createElement('div');
+  label.className = 'adv-msg-label';
+  label.textContent = role === 'user' ? 'ты' : 'советник';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'adv-msg-bubble';
+  // Simple markdown: **bold** → <b>bold</b>
+  let html = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+    .replace(/\n/g, '<br>');
+  bubble.innerHTML = html;
+
+  div.appendChild(label);
+  div.appendChild(bubble);
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function _showAdvisorTyping() {
+  const container = document.getElementById('advisor-messages');
+  const div = document.createElement('div');
+  div.className = 'adv-msg adv-msg-bot';
+  div.id = 'advisor-typing';
+  div.innerHTML = `
+    <div class="adv-msg-label">советник</div>
+    <div class="adv-msg-bubble">
+      <div class="adv-typing">
+        <div class="adv-typing-dot"></div>
+        <div class="adv-typing-dot"></div>
+        <div class="adv-typing-dot"></div>
+      </div>
+    </div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function _hideAdvisorTyping() {
+  const el = document.getElementById('advisor-typing');
+  if (el) el.remove();
+}
+
+async function sendAdvisorQuestion() {
+  if (advisorBusy) return;
+
+  const input = document.getElementById('advisor-input');
+  const question = input.value.trim();
+  if (!question) return;
+
+  // Block send button
+  advisorBusy = true;
+  document.getElementById('advisor-send').disabled = true;
+  input.value = '';
+
+  // Show user message
+  _addAdvisorMsg('user', question);
+  _showAdvisorTyping();
+
+  try {
+    const resp = await fetch('/api/rgo/advisor', {
+      method: 'POST',
+      headers: {
+        'Authorization': `tg-init-data ${window.Telegram?.WebApp?.initData || ''}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        question: question,
+        history: advisorHistory,
+      }),
+    });
+
+    _hideAdvisorTyping();
+
+    if (!resp.ok) {
+      _addAdvisorMsg('bot', '⚠️ Советник временно недоступен. Попробуй через несколько минут.');
+      return;
+    }
+
+    const data = await resp.json();
+    const answer = data.answer || '⚠️ Не удалось получить ответ.';
+
+    _addAdvisorMsg('bot', answer);
+
+    // Update history (keep last 6)
+    advisorHistory.push({ role: 'user', content: question });
+    advisorHistory.push({ role: 'assistant', content: answer });
+    if (advisorHistory.length > 6) {
+      advisorHistory = advisorHistory.slice(-6);
+    }
+
+  } catch (e) {
+    _hideAdvisorTyping();
+    _addAdvisorMsg('bot', '⚠️ Ошибка соединения. Проверь интернет и попробуй снова.');
+  } finally {
+    advisorBusy = false;
+    document.getElementById('advisor-send').disabled = false;
+    document.getElementById('advisor-input').focus();
+  }
+}
