@@ -1084,12 +1084,13 @@ body {
   border-radius: 16px;
   font-size: 13px;
   line-height: 1.6;
-  color: var(--tg-theme-text-color, #333);
+  color: #333;
 }
 .adv-msg-bot .adv-msg-bubble {
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--border-color, #dce8dc);
+  background: #fff;
+  border: 1px solid #dce8dc;
   border-radius: 4px 16px 16px 16px;
+  color: #333;
 }
 .adv-msg-user .adv-msg-bubble {
   background: var(--accent, #1a8c36);
@@ -1122,14 +1123,14 @@ body {
 }
 .advisor-input {
   flex: 1;
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--border-color, #dce8dc);
+  background: #fff;
+  border: 1px solid #dce8dc;
   border-radius: 20px;
   padding: 10px 14px;
   font-size: 13px;
   outline: none;
   font-family: inherit;
-  color: var(--tg-theme-text-color, #333);
+  color: #333;
 }
 .advisor-input::placeholder { color: var(--hint-color, #c0ccc0); }
 .advisor-send {
