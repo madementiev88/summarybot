@@ -8,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <link rel="stylesheet" href="/static/style.css?v=20260326a">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
@@ -283,7 +283,30 @@
     <button class="report-btn" onclick="openModal()">сообщить об ошибке</button>
   </div>
 
-  <!-- Advisor FAB (RGO only) -->
+  <!-- Processing overlay -->
+  <div class="processing-overlay" id="processing">
+    <div class="proc-spinner"></div>
+    <div class="proc-step" id="proc-step">Обработка...</div>
+    <div class="proc-sub" id="proc-sub"></div>
+  </div>
+
+  <!-- Feedback modal -->
+  <div class="modal-bg" id="modal">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Сообщить об ошибке</div>
+      <textarea class="modal-ta" placeholder="Опишите проблему или пожелание..."></textarea>
+      <button class="modal-send" onclick="sendFeedback()">Отправить</button>
+      <button class="modal-cancel" onclick="closeModal()">Отмена</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  </div><!-- /app-content -->
+
+  <!-- Advisor FAB (visible for admin + rgo) -->
   <button class="advisor-fab" id="advisor-fab" style="display:none;" onclick="openAdvisor()">
     <span>&#128172;</span>
   </button>
@@ -309,32 +332,9 @@
     </div>
   </div>
 
-  <!-- Processing overlay -->
-  <div class="processing-overlay" id="processing">
-    <div class="proc-spinner"></div>
-    <div class="proc-step" id="proc-step">Обработка...</div>
-    <div class="proc-sub" id="proc-sub"></div>
-  </div>
-
-  <!-- Feedback modal -->
-  <div class="modal-bg" id="modal">
-    <div class="modal">
-      <div class="modal-handle"></div>
-      <div class="modal-title">Сообщить об ошибке</div>
-      <textarea class="modal-ta" placeholder="Опишите проблему или пожелание..."></textarea>
-      <button class="modal-send" onclick="sendFeedback()">Отправить</button>
-      <button class="modal-cancel" onclick="closeModal()">Отмена</button>
-    </div>
-  </div>
-
-  <!-- Toast -->
-  <div class="toast" id="toast"></div>
-
-  </div><!-- /app-content -->
-
   <!-- Scripts -->
-  <script src="/static/recorder.js?v=20260326a"></script>
-  <script src="/static/app.js?v=20260326a"></script>
+  <script src="/static/recorder.js"></script>
+  <script src="/static/app.js"></script>
 
 </body>
 </html>
