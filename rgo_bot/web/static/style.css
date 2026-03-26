@@ -997,10 +997,10 @@ body {
 /* ===== Advisor Chat ===== */
 .advisor-fab {
   position: fixed;
-  bottom: 70px;
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
   right: 16px;
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background: var(--accent, #1a8c36);
   border: none;
@@ -1009,7 +1009,7 @@ body {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 16px rgba(26,140,54,.35);
-  z-index: 15;
+  z-index: 100;
   transition: transform .2s;
 }
 .advisor-fab:active { transform: scale(.92); }
